@@ -1153,8 +1153,23 @@
                             itemNo: item.item_no,
                             category: item.category,
                             materialNameCn: item.material_name_cn,
+                            materialNameEn: item.material_name_en,
                             brand: item.brand,
+                            modelNo: item.model_no,
+                            specification: item.specification,
+                            color: item.color,
+                            floor: item.floor,
+                            space: item.space,
+                            areaUsage: item.area_usage,
+                            position: item.position,
+                            installationMethod: item.installation_method,
+                            technicalRequirement: item.technical_requirement,
+                            supplier: item.supplier,
+                            contactPerson: item.contact_person,
+                            referencePrice: item.reference_price,
                             status: item.status || '草稿',
+                            remarks: item.remarks,
+                            imageData: item.image_data,
                             createdAt: item.created_at,
                             projectId: item.project_id
                         }));
@@ -1347,13 +1362,28 @@
                         item_no: item.itemNo,
                         category: item.category,
                         material_name_cn: item.materialNameCn,
+                        material_name_en: item.materialNameEn,
                         brand: item.brand,
+                        model_no: item.modelNo,
+                        specification: item.specification,
+                        color: item.color,
+                        floor: item.floor,
+                        space: item.space,
+                        area_usage: item.areaUsage,
+                        position: item.position,
+                        installation_method: item.installationMethod,
+                        technical_requirement: item.technicalRequirement,
+                        supplier: item.supplier,
+                        contact_person: item.contactPerson,
+                        reference_price: item.referencePrice,
                         status: item.status,
+                        remarks: item.remarks,
+                        image_data: item.imageData,
                         project_id: item.projectId || this.projectInfo.id,
-                        updated_at: new Date().toISOString(),
-                        updated_by: "User"
+                        updated_at: new Date().toISOString()
                     }));
-                    await supabaseClient.from("materials").upsert(updates);
+                    const { error } = await supabaseClient.from("materials").upsert(updates);
+                    if (error) throw error;
                     console.log('数据已保存到 Supabase');
                 } catch (err) {
                     console.error("保存失败:", err);
