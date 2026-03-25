@@ -304,45 +304,70 @@
         }
 
         async function checkAuth() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                currentUser = user;
-                document.getElementById('userInfo').textContent = user.email;
-                document.getElementById('statusDot').classList.remove('offline');
-                document.getElementById('statusText').textContent = '已连接';
-            } else {
-                showLoginForm();
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) throw error;
+
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('userInfo').textContent = user.email;
+                    document.getElementById('statusDot').classList.remove('offline');
+                    document.getElementById('statusText').textContent = '已连接';
+                } else {
+                    showLoginForm();
+                }
+            } catch (err) {
+                console.error('认证错误:', err);
+                document.getElementById('loading').innerHTML = `<div class="error">认证失败: ${err.message}</div>`;
             }
         }
 
         function showLoginForm() {
             const email = prompt('请输入邮箱地址：');
             if (email) {
-                supabase.auth.signInWithOtp({ email }).then(() => {
+                document.getElementById('loading').textContent = '发送验证码中...';
+                supabase.auth.signInWithOtp({ email }).then(({ error }) => {
+                    if (error) {
+                        alert('发送失败: ' + error.message);
+                        document.getElementById('loading').textContent = '加载中...';
+                        return;
+                    }
                     alert('验证码已发送到邮箱，请检查邮件');
                     const code = prompt('请输入验证码：');
                     if (code) {
-                        supabase.auth.verifyOtp({ email, token: code, type: 'email' }).then(() => {
+                        supabase.auth.verifyOtp({ email, token: code, type: 'email' }).then(({ error }) => {
+                            if (error) {
+                                alert('验证失败: ' + error.message);
+                                showLoginForm();
+                                return;
+                            }
                             init();
                         });
                     }
+                }).catch(err => {
+                    alert('错误: ' + err.message);
+                    document.getElementById('loading').textContent = '加载中...';
                 });
             }
         }
 
         async function loadMaterials() {
-            const { data, error } = await supabase
-                .from('materials')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
-            if (error) {
-                console.error('加载失败:', error);
-                return;
+            try {
+                const { data, error } = await supabase
+                    .from('materials')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                materials = data || [];
+                renderTable();
+            } catch (err) {
+                console.error('加载失败:', err);
+                document.getElementById('loading').innerHTML = `<div class="error">加载失败: ${err.message}</div>`;
             }
-            
-            materials = data || [];
-            renderTable();
         }
 
         function subscribeToChanges() {
