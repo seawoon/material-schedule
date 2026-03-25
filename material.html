@@ -1349,12 +1349,15 @@
                         material_name_cn: item.materialNameCn,
                         brand: item.brand,
                         status: item.status,
+                        project_id: item.projectId || this.projectInfo.id,
                         updated_at: new Date().toISOString(),
                         updated_by: "User"
                     }));
                     await supabaseClient.from("materials").upsert(updates);
+                    console.log('数据已保存到 Supabase');
                 } catch (err) {
                     console.error("保存失败:", err);
+                    alert('保存失败: ' + err.message);
                 }
             },
 
@@ -1756,7 +1759,8 @@
                         id: Date.now(),
                         ...itemData,
                         itemNo: itemNoInput || this.generateItemNo(category),
-                        createdAt: new Date().toISOString()
+                        createdAt: new Date().toISOString(),
+                        projectId: this.projectInfo.id
                     };
                     this.data.push(newItem);
                 }
