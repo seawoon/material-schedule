@@ -1542,6 +1542,7 @@
             updateFloorFilters() {
                 const floors = [...new Set(this.data.map(i => i.floor).filter(Boolean))].sort();
                 const container = document.getElementById('floorFilters');
+                if (!container) return;
                 container.innerHTML = floors.map(floor => `
                     <div class="filter-item" data-floor="${floor}">
                         <span>${floor}</span>
