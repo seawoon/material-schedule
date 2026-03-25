@@ -1356,35 +1356,83 @@
             async saveData() {
                 // 同步到 Supabase
                 try {
-                    const updates = this.data.map(item => ({
-                        id: item.id,
-                        item_no: item.itemNo,
-                        category: item.category,
-                        material_name_cn: item.materialNameCn,
-                        material_name_en: item.materialNameEn,
-                        brand: item.brand,
-                        model_no: item.modelNo,
-                        specification: item.specification,
-                        color: item.color,
-                        floor: item.floor,
-                        space: item.space,
-                        area_usage: item.areaUsage,
-                        position: item.position,
-                        installation_method: item.installationMethod,
-                        technical_requirement: item.technicalRequirement,
-                        supplier: item.supplier,
-                        contact_person: item.contactPerson,
-                        reference_price: item.referencePrice,
-                        status: item.status,
-                        remarks: item.remarks,
-                        project_id: item.projectId || this.projectInfo.id,
-                        updated_at: new Date().toISOString()
-                    }));
-                    const { error } = await supabaseClient.from("materials").upsert(updates);
-                    if (error) throw error;
-                    console.log('数据已保存到 Supabase');
+                    console.log('开始保存数据，共 ' + this.data.length + ' 条');
+
+                    // 分离新增和更新的数据
+                    const toInsert = [];
+                    const toUpdate = [];
+
+                    this.data.forEach(item => {
+                        const payload = {
+                            item_no: item.itemNo,
+                            category: item.category,
+                            material_name_cn: item.materialNameCn,
+                            material_name_en: item.materialNameEn,
+                            brand: item.brand,
+                            model_no: item.modelNo,
+                            specification: item.specification,
+                            color: item.color,
+                            floor: item.floor,
+                            space: item.space,
+                            area_usage: item.areaUsage,
+                            position: item.position,
+                            installation_method: item.installationMethod,
+                            technical_requirement: item.technicalRequirement,
+                            supplier: item.supplier,
+                            contact_person: item.contactPerson,
+                            reference_price: item.referencePrice,
+                            status: item.status,
+                            remarks: item.remarks,
+                            project_id: item.projectId || this.projectInfo.id,
+                            updated_at: new Date().toISOString()
+                        };
+
+                        // 如果 id 是数字（Date.now()生成的），说明是新增
+                        if (typeof item.id === 'number') {
+                            toInsert.push(payload);
+                        } else {
+                            // UUID 格式，说明是已存在的记录
+                            toUpdate.push({ ...payload, id: item.id });
+                        }
+                    });
+
+                    console.log('新增:', toInsert.length, '条，更新:', toUpdate.length, '条');
+
+                    // 执行新增
+                    if (toInsert.length > 0) {
+                        const { data: insertedData, error: insertError } = await supabaseClient
+                            .from("materials")
+                            .insert(toInsert)
+                            .select();
+
+                        if (insertError) {
+                            console.error('新增失败:', insertError);
+                            throw insertError;
+                        }
+                        console.log('新增成功:', insertedData);
+                    }
+
+                    // 执行更新
+                    if (toUpdate.length > 0) {
+                        const { error: updateError } = await supabaseClient
+                            .from("materials")
+                            .upsert(toUpdate);
+
+                        if (updateError) {
+                            console.error('更新失败:', updateError);
+                            throw updateError;
+                        }
+                        console.log('更新成功');
+                    }
+
+                    console.log('✅ 所有数据已保存到 Supabase');
+
+                    // 重新加载数据以获取最新的 ID
+                    await this.loadData();
+                    this.render();
+
                 } catch (err) {
-                    console.error("保存失败:", err);
+                    console.error("❌ 保存失败:", err);
                     alert('保存失败: ' + err.message);
                 }
             },
@@ -1838,13 +1886,29 @@
                 document.getElementById('detailPanel').classList.add('hidden');
             },
 
-            deleteItem() {
+            async deleteItem() {
                 if (!confirm('确定要删除这条材料吗？')) return;
                 const id = document.getElementById('editId').value;
-                this.data = this.data.filter(i => i.id != id);
-                this.saveData();
-                this.render();
-                this.closeDetail();
+
+                try {
+                    // 如果是 UUID，从数据库删除
+                    if (typeof id === 'string' && id.includes('-')) {
+                        const { error } = await supabaseClient
+                            .from('materials')
+                            .delete()
+                            .eq('id', id);
+
+                        if (error) throw error;
+                        console.log('✅ 已从数据库删除:', id);
+                    }
+
+                    this.data = this.data.filter(i => i.id != id);
+                    this.render();
+                    this.closeDetail();
+                } catch (err) {
+                    console.error('❌ 删除失败:', err);
+                    alert('删除失败: ' + err.message);
+                }
             },
 
             duplicateSelected() {
@@ -1870,17 +1934,36 @@
                 this.render();
             },
 
-            deleteSelected() {
+            async deleteSelected() {
                 if (this.selectedIds.size === 0) {
                     alert('请先选择要删除的材料');
                     return;
                 }
                 if (!confirm(`确定要删除选中的 ${this.selectedIds.size} 条材料吗？`)) return;
 
-                this.data = this.data.filter(item => !this.selectedIds.has(item.id));
-                this.selectedIds.clear();
-                this.saveData();
-                this.render();
+                try {
+                    // 找出需要从数据库删除的 UUID
+                    const uuidsToDelete = Array.from(this.selectedIds).filter(id =>
+                        typeof id === 'string' && id.includes('-')
+                    );
+
+                    if (uuidsToDelete.length > 0) {
+                        const { error } = await supabaseClient
+                            .from('materials')
+                            .delete()
+                            .in('id', uuidsToDelete);
+
+                        if (error) throw error;
+                        console.log('✅ 已从数据库删除:', uuidsToDelete.length, '条');
+                    }
+
+                    this.data = this.data.filter(item => !this.selectedIds.has(item.id));
+                    this.selectedIds.clear();
+                    this.render();
+                } catch (err) {
+                    console.error('❌ 批量删除失败:', err);
+                    alert('删除失败: ' + err.message);
+                }
             },
 
             batchEdit() {
