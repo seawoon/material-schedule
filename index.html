@@ -14,90 +14,156 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: #000;
+            color: #f5f5f7;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease;
+        }
+
+        body.light {
+            background: #fff;
+            color: #1d1d1f;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
-            justify-content: center;
-            -webkit-font-smoothing: antialiased;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.light .nav {
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-brand {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: -0.2px;
+        }
+
+        .theme-toggle {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .theme-toggle:hover {
+            opacity: 1;
         }
 
         .container {
-            max-width: 1200px;
-            width: 100%;
-            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px 40px 60px;
         }
 
-        .header {
+        .hero {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 80px;
         }
 
-        .header h1 {
-            font-size: 48px;
-            font-weight: 600;
-            letter-spacing: -1px;
-            margin-bottom: 12px;
+        .hero h1 {
+            font-size: 64px;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 16px;
+            line-height: 1.1;
         }
 
-        .header p {
-            font-size: 18px;
+        .hero p {
+            font-size: 21px;
             color: #86868b;
+            font-weight: 400;
         }
 
-        .projects-grid {
+        body.light .hero p {
+            color: #6e6e73;
+        }
+
+        .projects-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        body.light .projects-list {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .project-row {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            padding: 28px 32px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: 80px 1fr 140px 120px 60px;
             gap: 24px;
-            margin-bottom: 40px;
-        }
-
-        .project-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 32px;
+            align-items: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid rgba(0, 0, 0, 0.06);
-            position: relative;
         }
 
-        .project-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        body.light .project-row {
+            background: #fff;
+        }
+
+        .project-row:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.005);
+        }
+
+        body.light .project-row:hover {
+            background: #f5f5f7;
         }
 
         .project-no {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            font-size: 12px;
-            color: #86868b;
-            background: #f5f5f7;
-            padding: 4px 12px;
-            border-radius: 12px;
-        }
-
-        .project-card h3 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            padding-right: 60px;
-        }
-
-        .project-meta {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
             font-size: 13px;
+            font-weight: 600;
             color: #86868b;
+            font-variant-numeric: tabular-nums;
         }
 
-        .project-card p {
+        .project-info h3 {
+            font-size: 19px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+
+        .project-info p {
             font-size: 14px;
             color: #86868b;
-            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        body.light .project-info p {
+            color: #6e6e73;
+        }
+
+        .project-date {
+            font-size: 14px;
+            color: #86868b;
+            font-variant-numeric: tabular-nums;
         }
 
         .project-actions {
@@ -106,60 +172,236 @@
             align-items: center;
         }
 
-        .project-card .arrow {
-            font-size: 20px;
-            color: #007aff;
-        }
-
         .edit-btn {
-            padding: 4px 12px;
-            background: rgba(0, 0, 0, 0.05);
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #f5f5f7;
             cursor: pointer;
             transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        body.light .edit-btn {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1d1d1f;
         }
 
         .edit-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        body.light .edit-btn:hover {
             background: rgba(0, 0, 0, 0.1);
+        }
+
+        .arrow {
+            font-size: 20px;
+            color: #007aff;
+            transition: transform 0.2s;
+        }
+
+        .project-row:hover .arrow {
+            transform: translateX(4px);
         }
 
         .add-project-btn {
             width: 100%;
-            padding: 16px;
+            padding: 18px;
             background: #007aff;
             color: #fff;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
-            font-weight: 500;
+            font-size: 17px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .add-project-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+            background: #0051d5;
+            transform: scale(1.01);
         }
 
         .loading {
             text-align: center;
-            padding: 60px;
+            padding: 100px 20px;
             color: #86868b;
+            font-size: 17px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1c1c1e;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        body.light .modal-content {
+            background: #fff;
+        }
+
+        .modal-content h2 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #86868b;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #f5f5f7;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        body.light .form-group input {
+            background: #f5f5f7;
+            border-color: #d1d1d6;
+            color: #1d1d1f;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007aff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007aff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #0051d5;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f5f5f7;
+        }
+
+        body.light .btn-secondary {
+            background: #e5e5ea;
+            color: #1d1d1f;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 40px;
+            }
+            .project-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .project-no {
+                position: absolute;
+                top: 28px;
+                right: 32px;
+            }
         }
     </style>
 </head>
 <body>
+    <nav class="nav">
+        <div class="nav-brand">Cube Architecture</div>
+        <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    </nav>
+
     <div class="container">
-        <div class="header">
-            <h1>材料管理系统</h1>
-            <p>Cube Architecture</p>
+        <div class="hero">
+            <h1>项目管理</h1>
+            <p>Material Management System</p>
         </div>
 
         <div id="loading" class="loading">加载项目中...</div>
-        <div id="projectsGrid" class="projects-grid" style="display: none;"></div>
+        <div id="projectsList" class="projects-list" style="display: none;"></div>
         <button class="add-project-btn" onclick="addProject()" style="display: none;" id="addBtn">+ 新增项目</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">新增项目</h2>
+            <form id="projectForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label>项目名称</label>
+                    <input type="text" id="projectName" required>
+                </div>
+                <div class="form-group">
+                    <label>项目描述</label>
+                    <input type="text" id="projectDesc">
+                </div>
+                <div class="form-group">
+                    <label>项目编号</label>
+                    <input type="text" id="projectNo" placeholder="例如: P001">
+                </div>
+                <div class="form-group">
+                    <label>开始日期</label>
+                    <input type="date" id="projectDate">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" onclick="saveProject()">保存</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -168,33 +410,56 @@
         
         const { createClient } = window.supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let currentEditId = null;
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         async function loadProjects() {
             try {
-                const { data, error } = await supabaseClient.from('projects').select('*');
+                const { data, error } = await supabaseClient
+                    .from('projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
                 if (error) throw error;
 
-                const grid = document.getElementById('projectsGrid');
+                const list = document.getElementById('projectsList');
                 const loading = document.getElementById('loading');
                 const addBtn = document.getElementById('addBtn');
 
-                grid.innerHTML = data.map(project => `
-                    <div class="project-card" onclick="openProject('${project.id}', '${project.name}')">
-                        <div class="project-no">${project.project_no || 'N/A'}</div>
-                        <h3>${project.name}</h3>
-                        <div class="project-meta">
-                            <span>📅 ${project.start_date || '未设置'}</span>
+                list.innerHTML = '';
+                data.forEach(project => {
+                    const row = document.createElement('div');
+                    row.className = 'project-row';
+                    row.onclick = () => openProject(project.id, project.name);
+
+                    row.innerHTML = `
+                        <div class="project-no">${escapeHtml(project.project_no || 'N/A')}</div>
+                        <div class="project-info">
+                            <h3>${escapeHtml(project.name)}</h3>
+                            <p>${escapeHtml(project.description || '暂无描述')}</p>
                         </div>
-                        <p>${project.description || '点击进入项目'}</p>
+                        <div class="project-date">${escapeHtml(project.start_date || '未设置日期')}</div>
                         <div class="project-actions">
-                            <button class="edit-btn" onclick="event.stopPropagation(); editProject('${project.id}')">编辑</button>
-                            <div class="arrow">→</div>
+                            <button class="edit-btn">编辑</button>
                         </div>
-                    </div>
-                `).join('');
+                        <div class="arrow">→</div>
+                    `;
+
+                    row.querySelector('.edit-btn').onclick = (e) => {
+                        e.stopPropagation();
+                        editProject(project.id);
+                    };
+
+                    list.appendChild(row);
+                });
 
                 loading.style.display = 'none';
-                grid.style.display = 'grid';
+                list.style.display = 'flex';
                 addBtn.style.display = 'block';
             } catch (err) {
                 console.error('加载失败:', err);
@@ -206,51 +471,87 @@
             window.location.href = `material.html?project=${projectId}&name=${encodeURIComponent(projectName)}`;
         }
 
-        async function addProject() {
-            const name = prompt('请输入项目名称：');
-            if (name) {
-                const description = prompt('请输入项目描述（可选）：');
-                const projectNo = prompt('请输入项目编号（如 P001）：');
-                const startDate = prompt('请输入开始日期（YYYY-MM-DD）：');
-                try {
-                    const { error } = await supabaseClient.from('projects').insert({
-                        name: name,
-                        description: description || '',
-                        project_no: projectNo || null,
-                        start_date: startDate || null
-                    });
-                    if (error) throw error;
-                    loadProjects();
-                } catch (err) {
-                    alert('创建失败: ' + err.message);
-                }
-            }
+        function addProject() {
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = '新增项目';
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectDesc').value = '';
+            document.getElementById('projectNo').value = '';
+            document.getElementById('projectDate').value = '';
+            document.getElementById('modal').classList.add('active');
         }
 
         async function editProject(projectId) {
             try {
-                const { data, error } = await supabaseClient.from('projects').select('*').eq('id', projectId).single();
+                const { data, error } = await supabaseClient
+                    .from('projects')
+                    .select('*')
+                    .eq('id', projectId)
+                    .single();
+
                 if (error) throw error;
 
-                const name = prompt('项目名称：', data.name);
-                if (name === null) return;
-
-                const description = prompt('项目描述：', data.description || '');
-                const projectNo = prompt('项目编号：', data.project_no || '');
-                const startDate = prompt('开始日期（YYYY-MM-DD）：', data.start_date || '');
-
-                const { error: updateError } = await supabaseClient.from('projects').update({
-                    name: name,
-                    description: description,
-                    project_no: projectNo,
-                    start_date: startDate
-                }).eq('id', projectId);
-
-                if (updateError) throw updateError;
-                loadProjects();
+                currentEditId = projectId;
+                document.getElementById('modalTitle').textContent = '编辑项目';
+                document.getElementById('projectName').value = data.name || '';
+                document.getElementById('projectDesc').value = data.description || '';
+                document.getElementById('projectNo').value = data.project_no || '';
+                document.getElementById('projectDate').value = data.start_date || '';
+                document.getElementById('modal').classList.add('active');
             } catch (err) {
-                alert('编辑失败: ' + err.message);
+                alert('加载失败: ' + err.message);
             }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            currentEditId = null;
+        }
+
+        async function saveProject() {
+            const name = document.getElementById('projectName').value.trim();
+            if (!name) {
+                alert('请输入项目名称');
+                return;
+            }
+
+            const projectData = {
+                name: name,
+                description: document.getElementById('projectDesc').value.trim(),
+                project_no: document.getElementById('projectNo').value.trim(),
+                start_date: document.getElementById('projectDate').value || null
+            };
+
+            try {
+                if (currentEditId) {
+                    const { error } = await supabaseClient
+                        .from('projects')
+                        .update({ ...projectData, updated_at: new Date().toISOString() })
+                        .eq('id', currentEditId);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabaseClient
+                        .from('projects')
+                        .insert(projectData);
+                    if (error) throw error;
+                }
+                closeModal();
+                await loadProjects();
+            } catch (err) {
+                alert('保存失败: ' + err.message);
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            const isLight = document.body.classList.contains('light');
+            document.querySelector('.theme-toggle').textContent = isLight ? '🌙' : '☀️';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light');
+            document.querySelector('.theme-toggle').textContent = '🌙';
         }
 
         loadProjects();
