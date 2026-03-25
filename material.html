@@ -686,7 +686,9 @@
                 <h1>材料表管理</h1>
                 <div class="project-info" style="cursor: pointer;" onclick="app.editProjectInfo()">
                     <div id="projectName" style="font-weight: 600;">未命名项目</div>
-                    <div id="projectNo" style="font-size: 11px; color: #999;">点击编辑项目信息</div>
+                    <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                        <span id="projectNo">N/A</span> · <span id="projectDate">未设置日期</span>
+                    </div>
                 </div>
             </div>
 
@@ -1053,7 +1055,7 @@
             selectedIds: new Set(),
             currentFilter: { type: 'view', value: 'all' },
             searchTerm: '',
-            projectInfo: { name: '未命名项目', no: '', date: '' },
+            projectInfo: { id: null, name: '未命名项目', no: '', date: '' },
 
             categories: {
                 'ST': '石材',
@@ -1118,6 +1120,25 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const projectId = urlParams.get('project');
 
+                    // 加载项目信息
+                    if (projectId) {
+                        const { data: projectData, error: projectError } = await supabaseClient
+                            .from('projects')
+                            .select('*')
+                            .eq('id', projectId)
+                            .single();
+
+                        if (!projectError && projectData) {
+                            this.projectInfo = {
+                                id: projectData.id,
+                                name: projectData.name,
+                                no: projectData.project_no || '',
+                                date: projectData.start_date || ''
+                            };
+                            this.updateProjectDisplay();
+                        }
+                    }
+
                     let query = supabaseClient.from('materials').select('*');
                     if (projectId) {
                         query = query.eq('project_id', projectId);
@@ -1154,20 +1175,43 @@
                 this.updateProjectDisplay();
             },
 
-            saveProjectInfo() {
-                this.projectInfo = {
-                    name: document.getElementById('projectNameInput').value || '未命名项目',
-                    no: document.getElementById('projectNoInput').value,
-                    date: document.getElementById('projectDateInput').value
-                };
-                localStorage.setItem('projectInfo', JSON.stringify(this.projectInfo));
+            async saveProjectInfo() {
+                const name = document.getElementById('projectNameInput').value || '未命名项目';
+                const no = document.getElementById('projectNoInput').value;
+                const date = document.getElementById('projectDateInput').value;
+
+                this.projectInfo.name = name;
+                this.projectInfo.no = no;
+                this.projectInfo.date = date;
+
+                // 保存到 Supabase
+                if (this.projectInfo.id) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('projects')
+                            .update({
+                                name: name,
+                                project_no: no,
+                                start_date: date,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', this.projectInfo.id);
+
+                        if (error) throw error;
+                    } catch (err) {
+                        alert('保存失败: ' + err.message);
+                        return;
+                    }
+                }
+
                 this.updateProjectDisplay();
                 this.closeProjectModal();
             },
 
             updateProjectDisplay() {
                 document.getElementById('projectName').textContent = this.projectInfo.name;
-                document.getElementById('projectNo').textContent = this.projectInfo.no || '点击编辑项目信息';
+                document.getElementById('projectNo').textContent = this.projectInfo.no || 'N/A';
+                document.getElementById('projectDate').textContent = this.projectInfo.date || '未设置日期';
             },
 
             editProjectInfo() {

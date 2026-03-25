@@ -116,7 +116,7 @@
             backdrop-filter: blur(20px);
             padding: 28px 32px;
             display: grid;
-            grid-template-columns: 80px 1fr 140px 120px 60px;
+            grid-template-columns: 80px 1fr 140px 60px;
             gap: 24px;
             align-items: center;
             cursor: pointer;
@@ -462,16 +462,8 @@
                             <p>${escapeHtml(project.description || '暂无描述')}</p>
                         </div>
                         <div class="project-date">${escapeHtml(project.start_date || '未设置日期')}</div>
-                        <div class="project-actions">
-                            <button class="edit-btn">编辑</button>
-                        </div>
                         <div class="arrow">→</div>
                     `;
-
-                    row.querySelector('.edit-btn').onclick = (e) => {
-                        e.stopPropagation();
-                        editProject(project.id);
-                    };
 
                     list.appendChild(row);
                 });
