@@ -1114,7 +1114,16 @@
 
             async loadData() {
                 try {
-                    const { data, error } = await supabaseClient.from('materials').select('*');
+                    // 获取 URL 中的项目 ID
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const projectId = urlParams.get('project');
+
+                    let query = supabaseClient.from('materials').select('*');
+                    if (projectId) {
+                        query = query.eq('project_id', projectId);
+                    }
+
+                    const { data, error } = await query;
                     if (error) throw error;
 
                     if (data && data.length > 0) {
@@ -1125,15 +1134,15 @@
                             materialNameCn: item.material_name_cn,
                             brand: item.brand,
                             status: item.status || '草稿',
-                            createdAt: item.created_at
+                            createdAt: item.created_at,
+                            projectId: item.project_id
                         }));
                     } else {
-                        this.data = this.getSampleData();
-                        await this.saveData();
+                        this.data = [];
                     }
                 } catch (err) {
                     console.error('加载失败:', err);
-                    this.data = this.getSampleData();
+                    this.data = [];
                 }
             },
 
