@@ -296,30 +296,14 @@
         let subscription = null;
 
         async function init() {
-            await checkAuth();
-            if (currentUser) {
-                loadMaterials();
-                subscribeToChanges();
-            }
+            document.getElementById('userInfo').textContent = '游客模式';
+            loadMaterials();
+            subscribeToChanges();
         }
 
         async function checkAuth() {
-            try {
-                const { data: { user }, error } = await supabase.auth.getUser();
-                if (error) throw error;
-
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('userInfo').textContent = user.email;
-                    document.getElementById('statusDot').classList.remove('offline');
-                    document.getElementById('statusText').textContent = '已连接';
-                } else {
-                    showLoginForm();
-                }
-            } catch (err) {
-                console.error('认证错误:', err);
-                document.getElementById('loading').innerHTML = `<div class="error">认证失败: ${err.message}</div>`;
-            }
+            // 简化版：跳过认证
+            return true;
         }
 
         function showLoginForm() {
