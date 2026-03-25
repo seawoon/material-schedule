@@ -1112,13 +1112,37 @@
                 localStorage.setItem('categories', JSON.stringify(this.categories));
             },
 
-            loadData() {
-                const saved = localStorage.getItem('materialData');
-                if (saved) {
-                    this.data = JSON.parse(saved);
-                } else {
-                    this.data = this.getSampleData();
-                    this.saveData();
+            async loadData() {
+                try {
+                    // 获取 URL 中的项目 ID
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const projectId = urlParams.get('project');
+
+                    let query = supabaseClient.from('materials').select('*');
+                    if (projectId) {
+                        query = query.eq('project_id', projectId);
+                    }
+
+                    const { data, error } = await query;
+                    if (error) throw error;
+
+                    if (data && data.length > 0) {
+                        this.data = data.map(item => ({
+                            id: item.id,
+                            itemNo: item.item_no,
+                            category: item.category,
+                            materialNameCn: item.material_name_cn,
+                            brand: item.brand,
+                            status: item.status || '草稿',
+                            createdAt: item.created_at,
+                            projectId: item.project_id
+                        }));
+                    } else {
+                        this.data = [];
+                    }
+                } catch (err) {
+                    console.error('加载失败:', err);
+                    this.data = [];
                 }
             },
 
@@ -1270,8 +1294,23 @@
                 });
             },
 
-            saveData() {
-                localStorage.setItem('materialData', JSON.stringify(this.data));
+            async saveData() {
+                // 同步到 Supabase
+                try {
+                    const updates = this.data.map(item => ({
+                        id: item.id,
+                        item_no: item.itemNo,
+                        category: item.category,
+                        material_name_cn: item.materialNameCn,
+                        brand: item.brand,
+                        status: item.status,
+                        updated_at: new Date().toISOString(),
+                        updated_by: "User"
+                    }));
+                    await supabaseClient.from("materials").upsert(updates);
+                } catch (err) {
+                    console.error("保存失败:", err);
+                }
             },
 
             getSampleData() {
