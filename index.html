@@ -60,6 +60,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             border: 1px solid rgba(0, 0, 0, 0.06);
+            position: relative;
         }
 
         .project-card:hover {
@@ -67,10 +68,30 @@
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
         }
 
+        .project-no {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 12px;
+            color: #86868b;
+            background: #f5f5f7;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
         .project-card h3 {
             font-size: 24px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            padding-right: 60px;
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #86868b;
         }
 
         .project-card p {
@@ -79,9 +100,29 @@
             margin-bottom: 16px;
         }
 
+        .project-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .project-card .arrow {
             font-size: 20px;
             color: #007aff;
+        }
+
+        .edit-btn {
+            padding: 4px 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .edit-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
         }
 
         .add-project-btn {
@@ -139,9 +180,16 @@
 
                 grid.innerHTML = data.map(project => `
                     <div class="project-card" onclick="openProject('${project.id}', '${project.name}')">
+                        <div class="project-no">${project.project_no || 'N/A'}</div>
                         <h3>${project.name}</h3>
+                        <div class="project-meta">
+                            <span>📅 ${project.start_date || '未设置'}</span>
+                        </div>
                         <p>${project.description || '点击进入项目'}</p>
-                        <div class="arrow">→</div>
+                        <div class="project-actions">
+                            <button class="edit-btn" onclick="event.stopPropagation(); editProject('${project.id}')">编辑</button>
+                            <div class="arrow">→</div>
+                        </div>
                     </div>
                 `).join('');
 
@@ -162,16 +210,46 @@
             const name = prompt('请输入项目名称：');
             if (name) {
                 const description = prompt('请输入项目描述（可选）：');
+                const projectNo = prompt('请输入项目编号（如 P001）：');
+                const startDate = prompt('请输入开始日期（YYYY-MM-DD）：');
                 try {
                     const { error } = await supabaseClient.from('projects').insert({
                         name: name,
-                        description: description || ''
+                        description: description || '',
+                        project_no: projectNo || null,
+                        start_date: startDate || null
                     });
                     if (error) throw error;
                     loadProjects();
                 } catch (err) {
                     alert('创建失败: ' + err.message);
                 }
+            }
+        }
+
+        async function editProject(projectId) {
+            try {
+                const { data, error } = await supabaseClient.from('projects').select('*').eq('id', projectId).single();
+                if (error) throw error;
+
+                const name = prompt('项目名称：', data.name);
+                if (name === null) return;
+
+                const description = prompt('项目描述：', data.description || '');
+                const projectNo = prompt('项目编号：', data.project_no || '');
+                const startDate = prompt('开始日期（YYYY-MM-DD）：', data.start_date || '');
+
+                const { error: updateError } = await supabaseClient.from('projects').update({
+                    name: name,
+                    description: description,
+                    project_no: projectNo,
+                    start_date: startDate
+                }).eq('id', projectId);
+
+                if (updateError) throw updateError;
+                loadProjects();
+            } catch (err) {
+                alert('编辑失败: ' + err.message);
             }
         }
 
