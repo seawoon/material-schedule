@@ -4,13 +4,13 @@
 
 - ✨ 苹果风格界面设计
 - 🌓 深色模式支持
-- 👥 多人实时协作（即将推出）
+- 👥 多人实时协作
 - 📊 材料数据管理
 - 🔍 智能搜索筛选
 
-## 快速开始
+## 在线访问
 
-直接打开 `material-schedule-v2-enhanced.html` 即可使用。
+https://material-schedule-seawoon.vercel.app
 
 ## 作者
 
