@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料表管理系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark {
+            background: #000;
+            color: #f5f5f7;
+        }
+
+        .dark .sidebar {
+            background: rgba(28, 28, 30, 0.72);
+            border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .toolbar {
+            background: rgba(28, 28, 30, 0.72);
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .table-container {
+            background: #1c1c1e;
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark table {
+            background: #1c1c1e;
+        }
+
+        .dark thead {
+            background: #2c2c2e;
+        }
+
+        .dark th {
+            color: #98989d;
+        }
+
+        .dark td {
+            border-bottom: 0.5px solid #2c2c2e;
+        }
+
+        .dark tr:hover {
+            background: #2c2c2e;
+        }
+
+        .dark .detail-panel {
+            background: rgba(28, 28, 30, 0.72);
+            border-left: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f5f5f7;
+        }
+
+        .dark .search-box input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f5f5f7;
+        }
+
+        .dark .filter-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 18px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧导航 */
+        .sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-right: 0.5px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: none;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .project-info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-section h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .filter-item {
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .filter-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+            transform: none;
+        }
+
+        .filter-item.active {
+            background: #007aff;
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .filter-count {
+            font-size: 12px;
+            color: inherit;
+            background: rgba(0, 0, 0, 0.08);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .filter-item.active .filter-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: none;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .search-box input:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+            background: #fff;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background: #007aff;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1d1d1f;
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 表格区域 */
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            background: #fff;
+            margin: 20px;
+            border-radius: 12px;
+            border: 0.5px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #f5f5f7;
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: #86868b;
+            border-bottom: 0.5px solid #e5e5e5;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 0.5px solid #f0f0f0;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+            transform: none;
+            transition: background 0.15s ease;
+        }
+
+        tr.selected {
+            background: rgba(0, 122, 255, 0.08);
+        }
+
+        tr {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        /* 右侧详情面板 */
+        .detail-panel {
+            width: 400px;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-left: 0.5px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: none;
+            animation: slideIn 0.25s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .detail-panel.hidden {
+            display: none;
+        }
+
+        .detail-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+            padding: 4px;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .detail-content {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+            background: #fff;
+            transform: none;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            padding: 20px;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 12px;
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+        }
+
+        .status-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            color: #1d1d1f;
+        }
+
+        .status-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .status-btn[data-status="草稿"].active {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #e65100;
+        }
+
+        .status-btn[data-status="待确认"].active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1976d2;
+        }
+
+        .status-btn[data-status="已确认"].active {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            color: #2e7d32;
+        }
+
+        .dark .status-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f5f5f7;
+        }
+
+        .dark .status-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .dark .status-btn[data-status="草稿"].active {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #e65100;
+        }
+
+        .dark .status-btn[data-status="待确认"].active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1976d2;
+        }
+
+        .dark .status-btn[data-status="已确认"].active {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            color: #2e7d32;
+        }
+
+        .btn-danger {
+            background: #d32f2f;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .status-draft { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); color: #e65100; }
+        .status-pending { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); color: #1976d2; }
+        .status-confirmed { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); color: #2e7d32; }
+        .status-obsolete { background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%); color: #666; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .image-upload {
+            border: 2px dashed #e5e5e5;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .image-upload:hover {
+            border-color: #1976d2;
+            background: #f5f5f5;
+        }
+
+        .image-upload.drag-over {
+            border-color: #1976d2;
+            background: #e3f2fd;
+        }
+
+        .image-preview {
+            margin-top: 12px;
+            position: relative;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            border-radius: 6px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .image-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #d32f2f;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .material-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .no-image {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 4px;
+            color: #ccc;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧导航 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>材料表管理</h1>
+                <div class="project-info" style="cursor: pointer;" onclick="app.editProjectInfo()">
+                    <div id="projectName" style="font-weight: 600;">未命名项目</div>
+                    <div id="projectNo" style="font-size: 11px; color: #999;">点击编辑项目信息</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>视图</h3>
+                <div class="filter-item active" data-view="all">
+                    <span>全部材料</span>
+                    <span class="filter-count" id="count-all">0</span>
+                </div>
+                <div class="filter-item" data-view="incomplete">
+                    <span>待完善</span>
+                    <span class="filter-count" id="count-incomplete">0</span>
+                </div>
+                <div class="filter-item" data-view="confirmed">
+                    <span>已确认</span>
+                    <span class="filter-count" id="count-confirmed">0</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="floorSection">
+                <h3>按楼层</h3>
+                <div id="floorFilters"></div>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="搜索材料名称、品牌、型号...">
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+                <button class="btn btn-primary" onclick="app.addNew()">+ 新增材料</button>
+                <button class="btn btn-secondary" onclick="app.batchEdit()">批量编辑</button>
+                <button class="btn btn-secondary" onclick="app.compareMaterials()">对比材料</button>
+                <button class="btn btn-secondary" onclick="app.duplicateSelected()">复制</button>
+                <button class="btn btn-danger" onclick="app.deleteSelected()">删除</button>
+                <button class="btn btn-secondary" onclick="app.showCostStats()">成本统计</button>
+                <button class="btn btn-secondary" onclick="app.exportExcel()">导出 Excel</button>
+                <button class="btn btn-secondary" onclick="app.exportJSON()">导出 JSON</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importJSON').click()">导入 JSON</button>
+                <input type="file" id="importJSON" accept=".json" style="display:none" onchange="app.importJSON(event)">
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px">
+                                <input type="checkbox" id="selectAll" onchange="app.toggleSelectAll()">
+                            </th>
+                            <th>图片</th>
+                            <th>编号</th>
+                            <th>类别</th>
+                            <th>材料名称</th>
+                            <th>品牌</th>
+                            <th>型号</th>
+                            <th>空间</th>
+                            <th>使用区域</th>
+                            <th>楼层</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+                <div id="emptyState" class="empty-state" style="display:none">
+                    <div class="empty-state-icon">📋</div>
+                    <div>暂无材料数据</div>
+                    <div style="margin-top: 8px; font-size: 14px;">点击"新增材料"开始添加</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧详情面板 -->
+        <div class="detail-panel hidden" id="detailPanel">
+            <div class="detail-header">
+                <h2 id="detailTitle">材料详情</h2>
+                <button class="close-btn" onclick="app.closeDetail()">×</button>
+            </div>
+            <div class="detail-content">
+                <form id="detailForm">
+                    <input type="hidden" id="editId">
+                    <div class="form-group">
+                        <label>材料类别 *</label>
+                        <select id="category" required>
+                            <option value="ST">ST - 石材</option>
+                            <option value="WD">WD - 木饰面</option>
+                            <option value="PT">PT - 涂料</option>
+                            <option value="MT">MT - 金属</option>
+                            <option value="CR">CR - 饰面类</option>
+                            <option value="GL">GL - 玻璃</option>
+                            <option value="CU">CU - 定制类</option>
+                            <option value="MR">MR - 镜面类</option>
+                            <option value="OS">OS - 其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>材料编号</label>
+                        <input type="text" id="itemNo" placeholder="留空自动生成，或手动输入" onblur="app.formatItemNo(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>材料名称（中文）*</label>
+                        <input type="text" id="materialNameCn" required>
+                    </div>
+                    <div class="form-group">
+                        <label>材料名称（英文）</label>
+                        <input type="text" id="materialNameEn">
+                    </div>
+                    <div class="form-group">
+                        <label>品牌</label>
+                        <input type="text" id="brand" list="brandList">
+                        <datalist id="brandList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>型号</label>
+                        <input type="text" id="modelNo">
+                    </div>
+                    <div class="form-group">
+                        <label>规格</label>
+                        <input type="text" id="specification">
+                    </div>
+                    <div class="form-group">
+                        <label>颜色</label>
+                        <input type="text" id="color">
+                    </div>
+                    <div class="form-group">
+                        <label>材料图片</label>
+                        <div class="image-upload" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                            <div>📷 点击上传 / 拖拽 / 粘贴图片</div>
+                            <div style="font-size: 12px; color: #999; margin-top: 4px;">支持 JPG、PNG 格式</div>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="app.handleImageUpload(event)">
+                        <div id="imagePreview" class="image-preview" style="display:none">
+                            <img id="previewImg" src="" alt="材料图片">
+                            <button type="button" class="image-remove" onclick="app.removeImage()">×</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>楼层</label>
+                        <input type="text" id="floor" list="floorList">
+                        <datalist id="floorList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>空间</label>
+                        <input type="text" id="space" list="spaceList">
+                        <datalist id="spaceList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>使用区域</label>
+                        <input type="text" id="areaUsage">
+                    </div>
+                    <div class="form-group">
+                        <label>部位</label>
+                        <select id="position">
+                            <option value="">请选择</option>
+                            <option value="地面">地面</option>
+                            <option value="墙面">墙面</option>
+                            <option value="天花">天花</option>
+                            <option value="柜体">柜体</option>
+                            <option value="台面">台面</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>安装方式</label>
+                        <select id="installationMethod">
+                            <option value="">请选择</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>技术要求</label>
+                        <select id="technicalRequirement">
+                            <option value="">请选择</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>供应商</label>
+                        <input type="text" id="supplier" list="supplierList">
+                        <datalist id="supplierList"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label>联系人</label>
+                        <input type="text" id="contactPerson">
+                    </div>
+                    <div class="form-group">
+                        <label>参考价格</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" id="referencePrice" placeholder="请输入数字" style="flex: 1;">
+                            <span style="color: #666; font-size: 14px;">元/㎡</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <div class="status-buttons">
+                            <button type="button" class="status-btn" data-status="草稿" onclick="app.setStatus('草稿')">草稿</button>
+                            <button type="button" class="status-btn" data-status="待确认" onclick="app.setStatus('待确认')">待确认</button>
+                            <button type="button" class="status-btn active" data-status="已确认" onclick="app.setStatus('已确认')">已确认</button>
+                        </div>
+                        <input type="hidden" id="status" value="已确认">
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea id="remarks"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="app.saveDetail()">保存</button>
+                <button class="btn btn-secondary" onclick="app.closeDetail()">取消</button>
+                <button class="btn btn-danger" onclick="app.deleteItem()" id="deleteBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 项目信息模态框 -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>项目信息</h2>
+                <button class="close-btn" onclick="app.closeProjectModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>项目名称</label>
+                    <input type="text" id="projectNameInput" placeholder="请输入项目名称">
+                </div>
+                <div class="form-group">
+                    <label>项目编号</label>
+                    <input type="text" id="projectNoInput" placeholder="请输入项目编号">
+                </div>
+                <div class="form-group">
+                    <label>项目日期</label>
+                    <input type="date" id="projectDateInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="app.saveProjectInfo()">保存</button>
+                <button class="btn btn-secondary" onclick="app.closeProjectModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量编辑模态框 -->
+    <div class="modal" id="batchEditModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>批量编辑 (<span id="batchCount">0</span> 项)</h2>
+                <button class="close-btn" onclick="app.closeBatchEdit()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>楼层</label>
+                    <input type="text" id="batchFloor" list="floorList">
+                </div>
+                <div class="form-group">
+                    <label>空间</label>
+                    <input type="text" id="batchSpace" list="spaceList">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select id="batchStatus">
+                        <option value="">不修改</option>
+                        <option value="草稿">草稿</option>
+                        <option value="待确认">待确认</option>
+                        <option value="已确认">已确认</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>供应商</label>
+                    <input type="text" id="batchSupplier" list="supplierList">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="app.saveBatchEdit()">应用</button>
+                <button class="btn btn-secondary" onclick="app.closeBatchEdit()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成本统计模态框 -->
+    <div class="modal" id="costStatsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>成本统计</h2>
+                <button class="close-btn" onclick="app.closeCostStats()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="costStatsContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeCostStats()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 材料对比模态框 -->
+    <div class="modal" id="compareModal">
+        <div class="modal-content" style="max-width: 90%;">
+            <div class="modal-header">
+                <h2>材料对比</h2>
+                <button class="close-btn" onclick="app.closeCompare()">×</button>
+            </div>
+            <div class="modal-body" style="overflow-x: auto;">
+                <div id="compareContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeCompare()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 类别管理模态框 -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>管理材料类别</h2>
+                <button class="close-btn" onclick="app.closeCategoryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 14px; margin-bottom: 12px;">添加新类别</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="newCategoryCode" placeholder="代码 (如 FB)" style="width: 100px; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px;">
+                        <input type="text" id="newCategoryName" placeholder="名称 (如 织物)" style="flex: 1; padding: 8px; border: 1px solid #e5e5e5; border-radius: 6px;">
+                        <button class="btn btn-primary" onclick="app.addCategory()">添加</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size: 14px; margin-bottom: 12px;">现有类别</h3>
+                    <div id="categoryList" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="app.closeCategoryModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        // 加载保存的主题
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.querySelector('.theme-toggle').textContent = '☀️';
+        }
+
+        // Supabase 初始化
+        const SUPABASE_URL = 'https://twvytxplhullonxkifba.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dnl0eHBsaHVsbG9ueGtpZmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTk0MjgsImV4cCI6MjA5MDAzNTQyOH0.5wVZin8TObqhDhrxZG3-31cmkh0erLrOT-tGxBNC1cQ';
+        const { createClient } = window.supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const app = {
+            data: [],
+            filteredData: [],
+            selectedIds: new Set(),
+            currentFilter: { type: 'view', value: 'all' },
+            searchTerm: '',
+            projectInfo: { name: '未命名项目', no: '', date: '' },
+
+            categories: {
+                'ST': '石材',
+                'WD': '木饰面',
+                'PT': '涂料',
+                'MT': '金属',
+                'CR': '饰面类',
+                'GL': '玻璃',
+                'CU': '定制类',
+                'MR': '镜面类',
+                'OS': '其他'
+            },
+
+            installationMethods: {
+                'ST': ['干挂', '湿贴', '干贴', '铺贴'],
+                'WD': ['龙骨固定', '胶粘', '钉装', '挂装'],
+                'PT': ['喷涂', '滚涂', '刷涂'],
+                'MT': ['焊接', '螺栓固定', '胶粘', '干挂'],
+                'CR': ['胶粘', '钉装', '挂装'],
+                'GL': ['打胶', '干挂', '框架固定'],
+                'CU': ['现场安装', '工厂预制'],
+                'MR': ['胶粘', '干挂', '框架固定'],
+                'OS': ['根据材料特性确定']
+            },
+
+            technicalRequirements: {
+                'ST': ['留缝2mm，填缝剂颜色需与石材协调', '表面平整度≤2mm', '防护处理，防水防污', '六面防护处理'],
+                'WD': ['木饰面需做防火处理，达到B1级', '含水率≤12%', '表面平整，无色差', '封边处理到位'],
+                'PT': ['基层处理平整，无空鼓', '涂刷均匀，无流挂', '环保标准达到E1级', '干燥后无异味'],
+                'MT': ['表面处理防锈防腐', '焊接处打磨平整', '安装牢固，无松动', '边角处理圆滑'],
+                'CR': ['粘贴牢固，无气泡', '拼接处理平整', '边角收口整齐', '防火等级达标'],
+                'GL': ['钢化处理，符合安全标准', '边角磨边处理', '打胶均匀饱满', '安装垂直度≤2mm'],
+                'CU': ['按设计图纸定制', '现场复核尺寸', '安装牢固可靠', '功能测试合格'],
+                'MR': ['镜面平整无变形', '背面防潮处理', '安装牢固', '边角打磨光滑'],
+                'OS': ['按材料特性确定技术要求']
+            },
+
+            init() {
+                this.loadData();
+                this.loadProjectInfo();
+                this.loadCategories();
+                this.bindEvents();
+                this.updateDatalistOptions();
+                this.render();
+            },
+
+            loadCategories() {
+                const saved = localStorage.getItem('categories');
+                if (saved) {
+                    this.categories = JSON.parse(saved);
+                }
+                this.updateCategoryUI();
+            },
+
+            saveCategories() {
+                localStorage.setItem('categories', JSON.stringify(this.categories));
+            },
+
+            async loadData() {
+                try {
+                    const { data, error } = await supabaseClient.from('materials').select('*');
+                    if (error) throw error;
+
+                    if (data && data.length > 0) {
+                        this.data = data.map(item => ({
+                            id: item.id,
+                            itemNo: item.item_no,
+                            category: item.category,
+                            materialNameCn: item.material_name_cn,
+                            brand: item.brand,
+                            status: item.status || '草稿',
+                            createdAt: item.created_at
+                        }));
+                    } else {
+                        this.data = this.getSampleData();
+                        await this.saveData();
+                    }
+                } catch (err) {
+                    console.error('加载失败:', err);
+                    this.data = this.getSampleData();
+                }
+            },
+
+            loadProjectInfo() {
+                const saved = localStorage.getItem('projectInfo');
+                if (saved) {
+                    this.projectInfo = JSON.parse(saved);
+                }
+                this.updateProjectDisplay();
+            },
+
+            saveProjectInfo() {
+                this.projectInfo = {
+                    name: document.getElementById('projectNameInput').value || '未命名项目',
+                    no: document.getElementById('projectNoInput').value,
+                    date: document.getElementById('projectDateInput').value
+                };
+                localStorage.setItem('projectInfo', JSON.stringify(this.projectInfo));
+                this.updateProjectDisplay();
+                this.closeProjectModal();
+            },
+
+            updateProjectDisplay() {
+                document.getElementById('projectName').textContent = this.projectInfo.name;
+                document.getElementById('projectNo').textContent = this.projectInfo.no || '点击编辑项目信息';
+            },
+
+            editProjectInfo() {
+                document.getElementById('projectNameInput').value = this.projectInfo.name;
+                document.getElementById('projectNoInput').value = this.projectInfo.no;
+                document.getElementById('projectDateInput').value = this.projectInfo.date;
+                document.getElementById('projectModal').classList.add('show');
+            },
+
+            closeProjectModal() {
+                document.getElementById('projectModal').classList.remove('show');
+            },
+
+            manageCategoriesModal() {
+                document.getElementById('categoryModal').classList.add('show');
+                this.renderCategoryList();
+            },
+
+            closeCategoryModal() {
+                document.getElementById('categoryModal').classList.remove('show');
+            },
+
+            renderCategoryList() {
+                const list = document.getElementById('categoryList');
+                list.innerHTML = Object.entries(this.categories).map(([code, name]) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #e5e5e5; border-radius: 6px; margin-bottom: 8px;">
+                        <div>
+                            <strong>${code}</strong> - ${name}
+                        </div>
+                        <button class="btn btn-danger" style="padding: 4px 12px; font-size: 12px;" onclick="app.deleteCategory('${code}')">删除</button>
+                    </div>
+                `).join('');
+            },
+
+            addCategory() {
+                const code = document.getElementById('newCategoryCode').value.trim().toUpperCase();
+                const name = document.getElementById('newCategoryName').value.trim();
+
+                if (!code || !name) {
+                    alert('请输入类别代码和名称');
+                    return;
+                }
+
+                if (this.categories[code]) {
+                    alert('该类别代码已存在');
+                    return;
+                }
+
+                this.categories[code] = name;
+                this.saveCategories();
+                this.updateCategoryUI();
+                this.renderCategoryList();
+
+                document.getElementById('newCategoryCode').value = '';
+                document.getElementById('newCategoryName').value = '';
+            },
+
+            deleteCategory(code) {
+                const hasItems = this.data.some(item => item.category === code);
+                if (hasItems) {
+                    alert('该类别下还有材料，无法删除');
+                    return;
+                }
+
+                if (confirm(`确定删除类别 ${code} - ${this.categories[code]} 吗？`)) {
+                    delete this.categories[code];
+                    this.saveCategories();
+                    this.updateCategoryUI();
+                    this.renderCategoryList();
+                }
+            },
+
+            updateCategoryUI() {
+                const sidebar = document.querySelector('.sidebar-section:nth-child(3)');
+                const filterItems = Object.entries(this.categories).map(([code, name]) => `
+                    <div class="filter-item" data-category="${code}">
+                        <span><strong>${code}</strong> ${name}</span>
+                        <span class="filter-count" id="count-${code}">0</span>
+                    </div>
+                `).join('');
+
+                sidebar.innerHTML = `
+                    <h3>材料类别</h3>
+                    ${filterItems}
+                    <div style="padding: 8px 16px;">
+                        <button class="btn btn-secondary" style="width: 100%; font-size: 12px;" onclick="app.manageCategoriesModal()">+ 管理类别</button>
+                    </div>
+                `;
+
+                this.bindCategoryFilters();
+                this.updateCategorySelect();
+            },
+
+            bindCategoryFilters() {
+                document.querySelectorAll('.filter-item[data-category]').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const category = e.currentTarget.dataset.category;
+                        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+                        this.currentFilter = { type: 'category', value: category };
+                        this.render();
+                    });
+                });
+            },
+
+            updateCategorySelect() {
+                const select = document.getElementById('category');
+                if (!select) return;
+
+                const currentValue = select.value;
+                select.innerHTML = Object.entries(this.categories).map(([code, name]) =>
+                    `<option value="${code}">${code} - ${name}</option>`
+                ).join('');
+
+                if (this.categories[currentValue]) {
+                    select.value = currentValue;
+                }
+            },
+
+            setStatus(status) {
+                document.getElementById('status').value = status;
+                document.querySelectorAll('.status-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.status === status);
+                });
+            },
+
+            async saveData() {
+                // 同步到 Supabase
+                try {
+                    const updates = this.data.map(item => ({
+                        id: item.id,
+                        item_no: item.itemNo,
+                        category: item.category,
+                        material_name_cn: item.materialNameCn,
+                        brand: item.brand,
+                        status: item.status,
+                        updated_at: new Date().toISOString(),
+                        updated_by: "User"
+                    }));
+                    await supabaseClient.from("materials").upsert(updates);
+                } catch (err) {
+                    console.error("保存失败:", err);
+                }
+            },
+
+            getSampleData() {
+                const baseTime = Date.now();
+                return [
+                    { id: baseTime + 1, itemNo: 'ST-01', category: 'ST', materialNameCn: '意大利灰大理石', materialNameEn: 'Italian Grey Marble', brand: '东鹏', modelNo: 'DG8001', specification: '800x800mm', color: '灰色', floor: 'F1', space: '大堂', areaUsage: '接待区地面', position: '地面', installationMethod: '干挂', technicalRequirement: '留缝2mm，填缝剂颜色需与石材协调', supplier: '东鹏瓷砖', contactPerson: '张经理', referencePrice: '280', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 2, itemNo: 'WD-01', category: 'WD', materialNameCn: '黑胡桃木饰面', materialNameEn: 'Black Walnut Veneer', brand: '千年舟', modelNo: 'QNZ-W001', specification: '2440x1220x18mm', color: '深棕色', floor: 'F1', space: '会议室', areaUsage: '背景墙', position: '墙面', installationMethod: '龙骨固定', technicalRequirement: '木饰面需做防火处理，达到B1级', supplier: '千年舟板材', contactPerson: '李总', referencePrice: '450', status: '待确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 3, itemNo: 'ST-02', category: 'ST', materialNameCn: '爵士白大理石', materialNameEn: 'Jazz White Marble', brand: '马可波罗', modelNo: 'MP2001', specification: '600x1200mm', color: '白色', floor: 'F2', space: '卫生间', areaUsage: '墙面', position: '墙面', installationMethod: '湿贴', technicalRequirement: '表面平整度≤2mm', supplier: '马可波罗瓷砖', contactPerson: '王总', referencePrice: '320', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 4, itemNo: 'PT-01', category: 'PT', materialNameCn: '立邦乳胶漆', materialNameEn: 'Nippon Paint', brand: '立邦', modelNo: 'LP-5000', specification: '18L/桶', color: '米白色', floor: 'F1', space: '办公室', areaUsage: '天花及墙面', position: '墙面', installationMethod: '滚涂', technicalRequirement: '基层处理平整，无空鼓', supplier: '立邦涂料', contactPerson: '刘经理', referencePrice: '35', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 5, itemNo: 'WD-02', category: 'WD', materialNameCn: '橡木实木地板', materialNameEn: 'Oak Wood Flooring', brand: '大自然', modelNo: 'DZR-8888', specification: '910x125x18mm', color: '原木色', floor: 'F2', space: '卧室', areaUsage: '地面', position: '地面', installationMethod: '钉装', technicalRequirement: '含水率≤12%', supplier: '大自然地板', contactPerson: '陈总', referencePrice: '380', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 6, itemNo: 'MT-01', category: 'MT', materialNameCn: '不锈钢踢脚线', materialNameEn: 'Stainless Steel Skirting', brand: '金牌', modelNo: 'JP-304', specification: '100mm高', color: '拉丝银', floor: 'F1', space: '走廊', areaUsage: '踢脚线', position: '墙面', installationMethod: '胶粘', technicalRequirement: '表面处理防锈防腐', supplier: '金牌五金', contactPerson: '赵经理', referencePrice: '120', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 7, itemNo: 'GL-01', category: 'GL', materialNameCn: '钢化玻璃隔断', materialNameEn: 'Tempered Glass Partition', brand: '信义玻璃', modelNo: 'XY-12T', specification: '12mm厚', color: '透明', floor: 'F1', space: '会议室', areaUsage: '隔断', position: '墙面', installationMethod: '框架固定', technicalRequirement: '钢化处理，符合安全标准', supplier: '信义玻璃', contactPerson: '孙总', referencePrice: '280', status: '待确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 8, itemNo: 'CR-01', category: 'CR', materialNameCn: '软包墙面', materialNameEn: 'Soft Wall Panel', brand: '欧派', modelNo: 'OP-2020', specification: '600x600mm', color: '米灰色', floor: 'F2', space: '卧室', areaUsage: '床头背景墙', position: '墙面', installationMethod: '胶粘', technicalRequirement: '防火等级达标', supplier: '欧派软装', contactPerson: '周经理', referencePrice: '180', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 9, itemNo: 'ST-03', category: 'ST', materialNameCn: '黑金花岗岩', materialNameEn: 'Black Galaxy Granite', brand: '新中源', modelNo: 'XZY-999', specification: '800x800mm', color: '黑色', floor: 'F1', space: '电梯厅', areaUsage: '地面', position: '地面', installationMethod: '干贴', technicalRequirement: '防护处理，防水防污', supplier: '新中源陶瓷', contactPerson: '吴总', referencePrice: '350', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 10, itemNo: 'WD-03', category: 'WD', materialNameCn: '科技木饰面板', materialNameEn: 'Engineered Wood Veneer', brand: '兔宝宝', modelNo: 'TBB-6688', specification: '2440x1220x3mm', color: '胡桃色', floor: 'F1', space: '接待室', areaUsage: '墙面装饰', position: '墙面', installationMethod: '胶粘', technicalRequirement: '表面平整，无色差', supplier: '兔宝宝板材', contactPerson: '郑经理', referencePrice: '260', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 11, itemNo: 'PT-02', category: 'PT', materialNameCn: '多乐士墙面漆', materialNameEn: 'Dulux Wall Paint', brand: '多乐士', modelNo: 'DLS-A990', specification: '5L/桶', color: '象牙白', floor: 'F2', space: '客厅', areaUsage: '墙面', position: '墙面', installationMethod: '刷涂', technicalRequirement: '涂刷均匀，无流挂', supplier: '多乐士涂料', contactPerson: '冯总', referencePrice: '42', status: '待确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 12, itemNo: 'CU-01', category: 'CU', materialNameCn: '定制衣柜', materialNameEn: 'Custom Wardrobe', brand: '索菲亚', modelNo: 'SFY-2024', specification: '按图定制', color: '白橡色', floor: 'F2', space: '主卧', areaUsage: '衣柜', position: '柜体', installationMethod: '现场安装', technicalRequirement: '按设计图纸定制', supplier: '索菲亚定制', contactPerson: '韩经理', referencePrice: '1200', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 13, itemNo: 'MR-01', category: 'MR', materialNameCn: '银镜', materialNameEn: 'Silver Mirror', brand: '耀华', modelNo: 'YH-5MM', specification: '5mm厚', color: '银色', floor: 'F2', space: '卫生间', areaUsage: '镜面', position: '墙面', installationMethod: '胶粘', technicalRequirement: '镜面平整无变形', supplier: '耀华玻璃', contactPerson: '蒋总', referencePrice: '150', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 14, itemNo: 'MT-02', category: 'MT', materialNameCn: '铝合金吊顶', materialNameEn: 'Aluminum Ceiling', brand: '友邦', modelNo: 'YB-300', specification: '300x300mm', color: '白色', floor: 'F1', space: '卫生间', areaUsage: '天花', position: '天花', installationMethod: '龙骨固定', technicalRequirement: '安装牢固，无松动', supplier: '友邦吊顶', contactPerson: '沈经理', referencePrice: '95', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 15, itemNo: 'GL-02', category: 'GL', materialNameCn: '夹胶玻璃', materialNameEn: 'Laminated Glass', brand: '南玻', modelNo: 'NG-10+10', specification: '10+1.52+10mm', color: '透明', floor: 'F1', space: '阳台', areaUsage: '栏板', position: '墙面', installationMethod: '框架固定', technicalRequirement: '边角磨边处理', supplier: '南玻集团', contactPerson: '姚总', referencePrice: '420', status: '待确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 16, itemNo: 'ST-04', category: 'ST', materialNameCn: '米黄洞石', materialNameEn: 'Beige Travertine', brand: '简一', modelNo: 'JY-T800', specification: '800x800mm', color: '米黄色', floor: 'F1', space: '餐厅', areaUsage: '地面', position: '地面', installationMethod: '铺贴', technicalRequirement: '六面防护处理', supplier: '简一大理石瓷砖', contactPerson: '袁经理', referencePrice: '380', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 17, itemNo: 'CR-02', category: 'CR', materialNameCn: '硬包墙板', materialNameEn: 'Hard Wall Panel', brand: '顶固', modelNo: 'DG-HP01', specification: '2440x600mm', color: '浅灰色', floor: 'F1', space: '走廊', areaUsage: '墙面护墙板', position: '墙面', installationMethod: '钉装', technicalRequirement: '拼接处理平整', supplier: '顶固集创', contactPerson: '贾总', referencePrice: '220', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 18, itemNo: 'WD-04', category: 'WD', materialNameCn: '柚木实木复合地板', materialNameEn: 'Teak Engineered Flooring', brand: '圣象', modelNo: 'SX-F4', specification: '1210x165x15mm', color: '柚木色', floor: 'F2', space: '书房', areaUsage: '地面', position: '地面', installationMethod: '悬浮铺装', technicalRequirement: '封边处理到位', supplier: '圣象地板', contactPerson: '钱经理', referencePrice: '320', status: '已确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 19, itemNo: 'OS-01', category: 'OS', materialNameCn: '地毯', materialNameEn: 'Carpet', brand: '山花', modelNo: 'SH-C200', specification: '4m宽', color: '灰色', floor: 'F1', space: '会议室', areaUsage: '地面', position: '地面', installationMethod: '胶粘', technicalRequirement: '根据材料特性确定', supplier: '山花地毯', contactPerson: '孔总', referencePrice: '180', status: '待确认', remarks: '', createdAt: new Date().toISOString() },
+                    { id: baseTime + 20, itemNo: 'PT-03', category: 'PT', materialNameCn: '艺术涂料', materialNameEn: 'Art Paint', brand: '嘉宝莉', modelNo: 'JBL-ART', specification: '20kg/桶', color: '珍珠白', floor: 'F2', space: '客厅', areaUsage: '电视背景墙', position: '墙面', installationMethod: '喷涂', technicalRequirement: '环保标准达到E1级', supplier: '嘉宝莉涂料', contactPerson: '秦经理', referencePrice: '68', status: '已确认', remarks: '', createdAt: new Date().toISOString() }
+                ];
+            },
+
+            bindEvents() {
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.render();
+                });
+
+                document.getElementById('category').addEventListener('change', (e) => {
+                    this.updateInstallationOptions(e.target.value);
+                    this.updateTechnicalOptions(e.target.value);
+                });
+
+                // 图片拖拽上传
+                const uploadArea = document.getElementById('imageUploadArea');
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('drag-over');
+                });
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('drag-over');
+                });
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('drag-over');
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        this.processImageFile(file);
+                    }
+                });
+
+                // 图片粘贴上传
+                document.addEventListener('paste', (e) => {
+                    if (document.getElementById('detailPanel').classList.contains('hidden')) return;
+                    const items = e.clipboardData.items;
+                    for (let item of items) {
+                        if (item.type.startsWith('image/')) {
+                            const file = item.getAsFile();
+                            this.processImageFile(file);
+                            break;
+                        }
+                    }
+                });
+
+                document.querySelectorAll('.filter-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const view = e.currentTarget.dataset.view;
+                        const category = e.currentTarget.dataset.category;
+
+                        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+
+                        if (view) {
+                            this.currentFilter = { type: 'view', value: view };
+                        } else if (category) {
+                            this.currentFilter = { type: 'category', value: category };
+                        }
+
+                        this.render();
+                    });
+                });
+            },
+
+            updateInstallationOptions(category) {
+                const select = document.getElementById('installationMethod');
+                const options = this.installationMethods[category] || [];
+                const currentValue = select.value;
+
+                select.innerHTML = '<option value="">请选择</option>';
+                options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.textContent = opt;
+                    select.appendChild(option);
+                });
+
+                if (options.includes(currentValue)) {
+                    select.value = currentValue;
+                }
+            },
+
+            updateTechnicalOptions(category) {
+                const select = document.getElementById('technicalRequirement');
+                const options = this.technicalRequirements[category] || [];
+                const currentValue = select.value;
+
+                select.innerHTML = '<option value="">请选择</option>';
+                options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.textContent = opt;
+                    select.appendChild(option);
+                });
+
+                if (options.includes(currentValue)) {
+                    select.value = currentValue;
+                }
+            },
+
+            filterData() {
+                let filtered = [...this.data];
+
+                // 应用视图筛选
+                if (this.currentFilter.type === 'view') {
+                    if (this.currentFilter.value === 'incomplete') {
+                        filtered = filtered.filter(item => !item.brand || !item.materialNameCn || !item.areaUsage);
+                    } else if (this.currentFilter.value === 'confirmed') {
+                        filtered = filtered.filter(item => item.status === '已确认');
+                    }
+                } else if (this.currentFilter.type === 'category') {
+                    filtered = filtered.filter(item => item.category === this.currentFilter.value);
+                } else if (this.currentFilter.type === 'floor') {
+                    filtered = filtered.filter(item => item.floor === this.currentFilter.value);
+                } else if (this.currentFilter.type === 'space') {
+                    filtered = filtered.filter(item => item.space === this.currentFilter.value);
+                }
+
+                // 应用搜索（搜索所有字段）
+                if (this.searchTerm) {
+                    filtered = filtered.filter(item =>
+                        (item.materialNameCn || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.materialNameEn || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.brand || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.modelNo || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.itemNo || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.specification || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.color || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.floor || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.space || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.areaUsage || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.supplier || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.remarks || '').toLowerCase().includes(this.searchTerm)
+                    );
+                }
+
+                // 按类别和编号排序
+                const categoryOrder = ['ST', 'WD', 'PT', 'MT', 'CR', 'GL', 'CU', 'MR', 'OS'];
+                filtered.sort((a, b) => {
+                    const catA = categoryOrder.indexOf(a.category);
+                    const catB = categoryOrder.indexOf(b.category);
+                    if (catA !== catB) return catA - catB;
+
+                    const numA = parseInt(a.itemNo?.match(/\d+$/)?.[0] || 0);
+                    const numB = parseInt(b.itemNo?.match(/\d+$/)?.[0] || 0);
+                    return numA - numB;
+                });
+
+                this.filteredData = filtered;
+            },
+
+            render() {
+                this.filterData();
+                this.renderTable();
+                this.updateCounts();
+                this.updateFloorFilters();
+            },
+
+            updateFloorFilters() {
+                const floors = [...new Set(this.data.map(i => i.floor).filter(Boolean))].sort();
+                const container = document.getElementById('floorFilters');
+                container.innerHTML = floors.map(floor => `
+                    <div class="filter-item" data-floor="${floor}">
+                        <span>${floor}</span>
+                        <span class="filter-count">${this.data.filter(i => i.floor === floor).length}</span>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('.filter-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+                        this.currentFilter = { type: 'floor', value: e.currentTarget.dataset.floor };
+                        this.render();
+                    });
+                });
+            },
+
+            renderTable() {
+                const tbody = document.getElementById('tableBody');
+                const emptyState = document.getElementById('emptyState');
+
+                if (this.filteredData.length === 0) {
+                    tbody.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                tbody.innerHTML = this.filteredData.map(item => `
+                    <tr onclick="app.editItem('${item.id}')" class="${this.selectedIds.has(String(item.id)) ? 'selected' : ''}">
+                        <td onclick="event.stopPropagation()">
+                            <input type="checkbox" ${this.selectedIds.has(String(item.id)) ? 'checked' : ''}
+                                onchange="app.toggleSelect('${item.id}')">
+                        </td>
+                        <td>${item.imageData ? `<img src="${item.imageData}" class="material-image" alt="材料图片">` : '<div class="no-image">📷</div>'}</td>
+                        <td>${item.itemNo || '-'}</td>
+                        <td>${item.category || '-'}</td>
+                        <td>${item.materialNameCn || '-'}</td>
+                        <td>${item.brand || '-'}</td>
+                        <td>${item.modelNo || '-'}</td>
+                        <td>${item.space || '-'}</td>
+                        <td>${item.areaUsage || '-'}</td>
+                        <td>${item.floor || '-'}</td>
+                        <td>${this.getStatusBadge(item.status)}</td>
+                    </tr>
+                `).join('');
+            },
+
+            getStatusBadge(status) {
+                const map = {
+                    '草稿': 'status-draft',
+                    '待确认': 'status-pending',
+                    '已确认': 'status-confirmed'
+                };
+                return `<span class="status-badge ${map[status] || ''}">${status || '草稿'}</span>`;
+            },
+
+            updateCounts() {
+                document.getElementById('count-all').textContent = this.data.length;
+                document.getElementById('count-incomplete').textContent =
+                    this.data.filter(item => !item.brand || !item.materialNameCn || !item.areaUsage).length;
+                document.getElementById('count-confirmed').textContent =
+                    this.data.filter(item => item.status === '已确认').length;
+
+                Object.keys(this.categories).forEach(cat => {
+                    const countEl = document.getElementById(`count-${cat}`);
+                    if (countEl) {
+                        countEl.textContent = this.data.filter(item => item.category === cat).length;
+                    }
+                });
+            },
+
+            toggleSelect(id) {
+                id = String(id);
+                if (this.selectedIds.has(id)) {
+                    this.selectedIds.delete(id);
+                } else {
+                    this.selectedIds.add(id);
+                }
+                this.render();
+            },
+
+            toggleSelectAll() {
+                const checked = document.getElementById('selectAll').checked;
+                if (checked) {
+                    this.filteredData.forEach(item => this.selectedIds.add(String(item.id)));
+                } else {
+                    this.selectedIds.clear();
+                }
+                this.render();
+            },
+
+            addNew() {
+                document.getElementById('detailPanel').classList.remove('hidden');
+                document.getElementById('detailTitle').textContent = '新增材料';
+                document.getElementById('deleteBtn').style.display = 'none';
+                document.getElementById('detailForm').reset();
+                document.getElementById('editId').value = '';
+                document.getElementById('itemNo').value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+
+                const category = document.getElementById('category').value || 'ST';
+                this.updateInstallationOptions(category);
+                this.updateTechnicalOptions(category);
+
+                document.getElementById('category').focus();
+            },
+
+            editItem(id) {
+                const item = this.data.find(i => i.id == id);
+                if (!item) return;
+
+                document.getElementById('detailPanel').classList.remove('hidden');
+                document.getElementById('detailTitle').textContent = '编辑材料';
+                document.getElementById('deleteBtn').style.display = 'block';
+
+                document.getElementById('editId').value = item.id;
+
+                this.updateInstallationOptions(item.category);
+                this.updateTechnicalOptions(item.category);
+
+                ['itemNo', 'category', 'materialNameCn', 'materialNameEn', 'brand',
+                    'modelNo', 'specification', 'color', 'floor', 'space', 'areaUsage', 'position',
+                    'installationMethod', 'technicalRequirement', 'supplier', 'contactPerson',
+                    'referencePrice', 'remarks'].forEach(field => {
+                    const el = document.getElementById(field);
+                    if (el) el.value = item[field] || '';
+                });
+
+                this.setStatus(item.status || '已确认');
+
+                if (item.imageData) {
+                    document.getElementById('previewImg').src = item.imageData;
+                    document.getElementById('imagePreview').style.display = 'block';
+                } else {
+                    document.getElementById('imagePreview').style.display = 'none';
+                }
+            },
+
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                this.processImageFile(file);
+            },
+
+            processImageFile(file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('请上传图片文件');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            },
+
+            removeImage() {
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('imageInput').value = '';
+            },
+
+            saveDetail() {
+                const form = document.getElementById('detailForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const id = document.getElementById('editId').value;
+                const category = document.getElementById('category').value;
+                const itemNoInput = document.getElementById('itemNo').value.trim();
+
+                const itemData = {
+                    category,
+                    materialNameCn: document.getElementById('materialNameCn').value,
+                    materialNameEn: document.getElementById('materialNameEn').value,
+                    brand: document.getElementById('brand').value,
+                    modelNo: document.getElementById('modelNo').value,
+                    specification: document.getElementById('specification').value,
+                    color: document.getElementById('color').value,
+                    floor: document.getElementById('floor').value,
+                    space: document.getElementById('space').value,
+                    areaUsage: document.getElementById('areaUsage').value,
+                    position: document.getElementById('position').value,
+                    installationMethod: document.getElementById('installationMethod').value,
+                    technicalRequirement: document.getElementById('technicalRequirement').value,
+                    supplier: document.getElementById('supplier').value,
+                    contactPerson: document.getElementById('contactPerson').value,
+                    referencePrice: document.getElementById('referencePrice').value,
+                    status: document.getElementById('status').value,
+                    remarks: document.getElementById('remarks').value,
+                    imageData: document.getElementById('imagePreview').style.display === 'none' ? '' : document.getElementById('previewImg').src,
+                    thickness: '',
+                    fireRating: '',
+                    phone: ''
+                };
+
+                if (id) {
+                    const item = this.data.find(i => i.id == id);
+                    Object.assign(item, itemData);
+                    if (itemNoInput) {
+                        item.itemNo = itemNoInput;
+                    } else if (!item.itemNo) {
+                        item.itemNo = this.generateItemNo(category);
+                    }
+                } else {
+                    const newItem = {
+                        id: Date.now(),
+                        ...itemData,
+                        itemNo: itemNoInput || this.generateItemNo(category),
+                        createdAt: new Date().toISOString()
+                    };
+                    this.data.push(newItem);
+                }
+
+                this.saveData();
+                this.updateDatalistOptions();
+                this.render();
+                this.closeDetail();
+            },
+
+            updateDatalistOptions() {
+                const brands = [...new Set(this.data.map(i => i.brand).filter(Boolean))];
+                const floors = [...new Set(this.data.map(i => i.floor).filter(Boolean))];
+                const spaces = [...new Set(this.data.map(i => i.space).filter(Boolean))];
+                const suppliers = [...new Set(this.data.map(i => i.supplier).filter(Boolean))];
+
+                this.updateDatalist('brandList', brands);
+                this.updateDatalist('floorList', floors);
+                this.updateDatalist('spaceList', spaces);
+                this.updateDatalist('supplierList', suppliers);
+            },
+
+            updateDatalist(id, values) {
+                const datalist = document.getElementById(id);
+                datalist.innerHTML = values.map(v => `<option value="${v}">`).join('');
+            },
+
+            formatItemNo(input) {
+                let value = input.value.trim().toUpperCase();
+                const match = value.match(/^([A-Z]{2})[-]?(\d+)$/);
+                if (match) {
+                    const [, code, num] = match;
+                    input.value = `${code}-${num.padStart(2, '0')}`;
+                }
+            },
+
+            generateItemNo(category) {
+                const items = this.data.filter(i => i.category === category && i.itemNo);
+                const maxNum = items.reduce((max, item) => {
+                    const match = item.itemNo.match(/-(\d+)$/);
+                    return match ? Math.max(max, parseInt(match[1])) : max;
+                }, 0);
+                return `${category}-${String(maxNum + 1).padStart(2, '0')}`;
+            },
+
+            closeDetail() {
+                document.getElementById('detailPanel').classList.add('hidden');
+            },
+
+            deleteItem() {
+                if (!confirm('确定要删除这条材料吗？')) return;
+                const id = document.getElementById('editId').value;
+                this.data = this.data.filter(i => i.id != id);
+                this.saveData();
+                this.render();
+                this.closeDetail();
+            },
+
+            duplicateSelected() {
+                if (this.selectedIds.size === 0) {
+                    alert('请先选择要复制的材料');
+                    return;
+                }
+                this.selectedIds.forEach(id => {
+                    const item = this.data.find(i => i.id == id);
+                    if (item) {
+                        const newItem = {
+                            ...item,
+                            id: Date.now() + Math.random(),
+                            itemNo: this.generateItemNo(item.category),
+                            imageData: '',
+                            createdAt: new Date().toISOString()
+                        };
+                        this.data.push(newItem);
+                    }
+                });
+                this.selectedIds.clear();
+                this.saveData();
+                this.render();
+            },
+
+            deleteSelected() {
+                if (this.selectedIds.size === 0) {
+                    alert('请先选择要删除的材料');
+                    return;
+                }
+                if (!confirm(`确定要删除选中的 ${this.selectedIds.size} 条材料吗？`)) return;
+
+                this.data = this.data.filter(item => !this.selectedIds.has(item.id));
+                this.selectedIds.clear();
+                this.saveData();
+                this.render();
+            },
+
+            batchEdit() {
+                if (this.selectedIds.size === 0) {
+                    alert('请先选择要编辑的材料');
+                    return;
+                }
+                document.getElementById('batchCount').textContent = this.selectedIds.size;
+                document.getElementById('batchFloor').value = '';
+                document.getElementById('batchSpace').value = '';
+                document.getElementById('batchStatus').value = '';
+                document.getElementById('batchSupplier').value = '';
+                document.getElementById('batchEditModal').classList.add('show');
+            },
+
+            closeBatchEdit() {
+                document.getElementById('batchEditModal').classList.remove('show');
+            },
+
+            saveBatchEdit() {
+                const floor = document.getElementById('batchFloor').value.trim();
+                const space = document.getElementById('batchSpace').value.trim();
+                const status = document.getElementById('batchStatus').value;
+                const supplier = document.getElementById('batchSupplier').value.trim();
+
+                this.selectedIds.forEach(id => {
+                    const item = this.data.find(i => i.id == id);
+                    if (item) {
+                        if (floor) item.floor = floor;
+                        if (space) item.space = space;
+                        if (status) item.status = status;
+                        if (supplier) item.supplier = supplier;
+                    }
+                });
+
+                this.selectedIds.clear();
+                this.saveData();
+                this.render();
+                this.closeBatchEdit();
+            },
+
+            showCostStats() {
+                const items = this.data.filter(item => item.referencePrice);
+
+                let html = '<div style="margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">';
+                html += '<label style="display: block; margin-bottom: 8px; font-weight: 600;">输入平米数计算总价：</label>';
+                html += '<input type="number" id="areaInput" placeholder="输入平米数" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 200px;" oninput="app.calculateCost()">';
+                html += '<div id="totalCost" style="margin-top: 12px; font-size: 18px; font-weight: 600; color: #2563eb;"></div>';
+                html += '</div>';
+
+                html += '<div style="margin-bottom: 24px;">';
+                html += '<h3 style="font-size: 16px; margin-bottom: 12px;">按类别统计</h3>';
+                html += '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border: 1px solid #e5e5e5;">类别</th><th style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">数量</th><th style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">平均价格</th></tr>';
+
+                Object.keys(this.categories).forEach(cat => {
+                    const catItems = items.filter(i => i.category === cat);
+                    if (catItems.length > 0) {
+                        const avg = catItems.reduce((sum, i) => {
+                            const price = parseFloat(String(i.referencePrice).replace(/[^\d.]/g, ''));
+                            return sum + (isNaN(price) ? 0 : price);
+                        }, 0) / catItems.length;
+                        html += `<tr><td style="padding: 8px; border: 1px solid #e5e5e5;">${cat} - ${this.categories[cat]}</td><td style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">${catItems.length}</td><td style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">¥${avg.toFixed(2)}/㎡</td></tr>`;
+                    }
+                });
+                html += '</table></div>';
+
+                const floors = [...new Set(items.map(i => i.floor).filter(Boolean))];
+                if (floors.length > 0) {
+                    html += '<div style="margin-bottom: 24px;">';
+                    html += '<h3 style="font-size: 16px; margin-bottom: 12px;">按楼层统计</h3>';
+                    html += '<table style="width: 100%; border-collapse: collapse;">';
+                    html += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border: 1px solid #e5e5e5;">楼层</th><th style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">数量</th><th style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">平均价格</th></tr>';
+
+                    floors.forEach(floor => {
+                        const floorItems = items.filter(i => i.floor === floor);
+                        const avg = floorItems.reduce((sum, i) => {
+                            const price = parseFloat(String(i.referencePrice).replace(/[^\d.]/g, ''));
+                            return sum + (isNaN(price) ? 0 : price);
+                        }, 0) / floorItems.length;
+                        html += `<tr><td style="padding: 8px; border: 1px solid #e5e5e5;">${floor}</td><td style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">${floorItems.length}</td><td style="padding: 8px; text-align: right; border: 1px solid #e5e5e5;">¥${avg.toFixed(2)}/㎡</td></tr>`;
+                    });
+                    html += '</table></div>';
+                }
+
+                document.getElementById('costStatsContent').innerHTML = html;
+                document.getElementById('costStatsModal').classList.add('show');
+            },
+
+            calculateCost() {
+                const area = parseFloat(document.getElementById('areaInput').value);
+                if (!area || area <= 0) {
+                    document.getElementById('totalCost').textContent = '';
+                    return;
+                }
+
+                const items = this.data.filter(item => item.referencePrice);
+                const totalAvg = items.reduce((sum, i) => {
+                    const price = parseFloat(String(i.referencePrice).replace(/[^\d.]/g, ''));
+                    return sum + (isNaN(price) ? 0 : price);
+                }, 0) / items.length;
+                const total = totalAvg * area;
+
+                document.getElementById('totalCost').textContent = `总价：¥${total.toFixed(2)}（平均 ¥${totalAvg.toFixed(2)}/㎡ × ${area}㎡）`;
+            },
+
+            closeCostStats() {
+                document.getElementById('costStatsModal').classList.remove('show');
+            },
+
+            compareMaterials() {
+                if (this.selectedIds.size < 2) {
+                    alert('请至少选择2个材料进行对比');
+                    return;
+                }
+                if (this.selectedIds.size > 4) {
+                    alert('最多只能对比4个材料');
+                    return;
+                }
+
+                const items = Array.from(this.selectedIds).map(id => this.data.find(i => i.id == id)).filter(Boolean);
+                const fields = [
+                    { key: 'itemNo', label: '编号' },
+                    { key: 'category', label: '类别' },
+                    { key: 'materialNameCn', label: '材料名称' },
+                    { key: 'brand', label: '品牌' },
+                    { key: 'modelNo', label: '型号' },
+                    { key: 'specification', label: '规格' },
+                    { key: 'color', label: '颜色' },
+                    { key: 'floor', label: '楼层' },
+                    { key: 'space', label: '空间' },
+                    { key: 'areaUsage', label: '使用区域' },
+                    { key: 'position', label: '部位' },
+                    { key: 'installationMethod', label: '安装方式' },
+                    { key: 'supplier', label: '供应商' },
+                    { key: 'referencePrice', label: '参考价格' },
+                    { key: 'status', label: '状态' }
+                ];
+
+                let html = '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<tr style="background: #f5f5f5;"><th style="padding: 12px; border: 1px solid #e5e5e5;">项目</th>';
+                items.forEach(item => {
+                    html += `<th style="padding: 12px; border: 1px solid #e5e5e5; min-width: 200px;">${item.materialNameCn || '-'}</th>`;
+                });
+                html += '</tr>';
+
+                html += '<tr><td style="padding: 12px; border: 1px solid #e5e5e5; font-weight: 600;">图片</td>';
+                items.forEach(item => {
+                    html += `<td style="padding: 12px; border: 1px solid #e5e5e5; text-align: center;">`;
+                    if (item.imageData) {
+                        html += `<img src="${item.imageData}" style="max-width: 150px; max-height: 150px; border-radius: 4px;">`;
+                    } else {
+                        html += '<div style="color: #ccc;">无图片</div>';
+                    }
+                    html += '</td>';
+                });
+                html += '</tr>';
+
+                fields.forEach(field => {
+                    html += `<tr><td style="padding: 12px; border: 1px solid #e5e5e5; font-weight: 600;">${field.label}</td>`;
+                    items.forEach(item => {
+                        let value = item[field.key] || '-';
+                        if (field.key === 'category') value = `${value} - ${this.categories[value] || ''}`;
+                        if (field.key === 'status') value = this.getStatusBadge(value);
+                        html += `<td style="padding: 12px; border: 1px solid #e5e5e5;">${value}</td>`;
+                    });
+                    html += '</tr>';
+                });
+
+                html += '</table>';
+                document.getElementById('compareContent').innerHTML = html;
+                document.getElementById('compareModal').classList.add('show');
+            },
+
+            closeCompare() {
+                document.getElementById('compareModal').classList.remove('show');
+            },
+
+            exportJSON() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `材料表_${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            importJSON(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (confirm(`将导入 ${imported.length} 条数据，是否覆盖现有数据？`)) {
+                            this.data = imported;
+                        } else {
+                            this.data = [...this.data, ...imported];
+                        }
+                        this.saveData();
+                        this.render();
+                        alert('导入成功！');
+                    } catch (err) {
+                        alert('导入失败：文件格式错误');
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            async exportExcel() {
+                const confirmedMaterials = this.data.filter(item => item.status === '已确认');
+                if (confirmedMaterials.length === 0) {
+                    alert('没有已确认的材料可导出');
+                    return;
+                }
+
+                const sortedMaterials = this.sortMaterials(confirmedMaterials);
+                sortedMaterials.forEach((item, index) => {
+                    item.pageNo = `P${String(index + 1).padStart(2, '0')}`;
+                });
+
+                const workbook = new ExcelJS.Workbook();
+                await this.createCoverSheetExcelJS(workbook);
+                await this.createCatalogSheetExcelJS(workbook, sortedMaterials);
+                await this.createCategorySheetsExcelJS(workbook, sortedMaterials);
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                const fileName = `${this.projectInfo.name}_材料表_${new Date().toISOString().split('T')[0]}.xlsx`;
+                saveAs(new Blob([buffer]), fileName);
+            },
+
+            sortMaterials(materials) {
+                const categoryOrder = {
+                    'ST': 1, 'WD': 2, 'PT': 3, 'MT': 4,
+                    'CR': 5, 'GL': 6, 'CU': 7, 'MR': 8, 'OS': 9
+                };
+                return materials.sort((a, b) => {
+                    const catDiff = categoryOrder[a.category] - categoryOrder[b.category];
+                    if (catDiff !== 0) return catDiff;
+                    return a.itemNo.localeCompare(b.itemNo);
+                });
+            },
+
+            async createCoverSheetExcelJS(workbook) {
+                const sheet = workbook.addWorksheet('A_封面');
+                sheet.columns = [
+                    { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 },
+                    { width: 10 }, { width: 20 }, { width: 10 }, { width: 15 }
+                ];
+
+                sheet.getCell('H5').value = '工程编号';
+                sheet.getCell('H5').font = { name: '微软雅黑', size: 12 };
+
+                sheet.getCell('F6').value = this.projectInfo.name;
+                sheet.getCell('F6').font = { name: '微软雅黑', size: 24, bold: true };
+                sheet.getCell('F6').alignment = { horizontal: 'center', vertical: 'middle' };
+
+                sheet.getCell('H7').value = 'Issued:';
+                sheet.getCell('I7').value = this.projectInfo.date;
+                sheet.getCell('H7').font = { name: '微软雅黑', size: 12 };
+                sheet.getCell('I7').font = { name: '微软雅黑', size: 12 };
+
+                sheet.getCell('E8').value = '材料表/洁具表/灯具表/五金表/开关面板表/设备表';
+                sheet.getCell('E8').font = { name: '微软雅黑', size: 12 };
+
+                sheet.getCell('H9').value = '注：材料以最终蓝图为准';
+                sheet.getCell('H9').font = { name: '微软雅黑', size: 12 };
+            },
+
+            async createCatalogSheetExcelJS(workbook, materials) {
+                const sheet = workbook.addWorksheet('B_目录');
+                sheet.columns = [
+                    { width: 8 }, { width: 15 }, { width: 25 },
+                    { width: 55 }, { width: 38 }, { width: 8 }
+                ];
+
+                sheet.getCell('A1').value = '盒几设计';
+                sheet.getCell('A1').font = { name: '微软雅黑', size: 14, bold: true };
+
+                sheet.getCell('B2').value = this.projectInfo.name;
+                sheet.getCell('B2').font = { name: '微软雅黑', size: 16, bold: true };
+                sheet.getCell('E2').value = '材料目录表';
+                sheet.getCell('E2').font = { name: '微软雅黑', size: 16, bold: true };
+                sheet.getCell('E2').alignment = { horizontal: 'center' };
+
+                const headers = ['序号', '编号', '产品名称', '', '', '页码'];
+                headers.forEach((header, index) => {
+                    const cell = sheet.getCell(3, index + 1);
+                    cell.value = header;
+                    cell.font = { name: '微软雅黑', size: 12, bold: true };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                        left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                        bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                        right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+                    };
+                });
+
+                materials.forEach((item, index) => {
+                    const rowNum = index + 4;
+                    const row = sheet.getRow(rowNum);
+                    row.getCell(1).value = index + 1;
+                    row.getCell(2).value = item.itemNo;
+                    row.getCell(3).value = item.materialNameCn;
+                    row.getCell(4).value = item.areaUsage || '';
+                    row.getCell(5).value = '……………………………………………………';
+                    row.getCell(6).value = item.pageNo;
+
+                    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+                        cell.font = { name: '微软雅黑', size: 11 };
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                            left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                            bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                            right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+                        };
+                        if (colNum === 1 || colNum === 2 || colNum === 6) {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+                        }
+                    });
+                });
+            },
+
+            async createCategorySheetsExcelJS(workbook, materials) {
+                const grouped = {};
+                materials.forEach(item => {
+                    if (!grouped[item.category]) grouped[item.category] = [];
+                    grouped[item.category].push(item);
+                });
+
+                for (const category of Object.keys(grouped)) {
+                    const sheet = workbook.addWorksheet(category);
+                    sheet.columns = [
+                        { width: 12.125 }, { width: 13 }, { width: 13 }, { width: 13 },
+                        { width: 13 }, { width: 13 }, { width: 13 }, { width: 13 }, { width: 9 }
+                    ];
+
+                    let currentRow = 1;
+                    for (const item of grouped[category]) {
+                        if (currentRow > 1) currentRow++;
+                        await this.createMaterialBlockExcelJS(sheet, item, currentRow);
+                        currentRow += 19;
+                    }
+                }
+            },
+
+            async createMaterialBlockExcelJS(sheet, item, startRow) {
+                const labelFont = { name: '微软雅黑', size: 10 };
+                const dataFont = { name: '微软雅黑', size: 11, bold: true };
+                const normalFont = { name: '微软雅黑', size: 10 };
+                const titleFont = { name: '微软雅黑', size: 40, bold: true };
+                const blueFont = { name: '微软雅黑', size: 10, color: { argb: 'FF0070C0' } };
+
+                // 设置所有行高为18pt
+                for (let i = 0; i < 19; i++) {
+                    if (i === 9 || i === 10) continue;
+                    sheet.getRow(startRow + i).height = 18;
+                }
+
+                // 类别标题 40pt
+                sheet.getCell(startRow, 8).value = item.category;
+                sheet.getCell(startRow, 8).font = titleFont;
+                sheet.getCell(startRow, 8).alignment = { horizontal: 'center' };
+
+                sheet.getCell(startRow + 2, 1).value = '项目名称|Project：';
+                sheet.getCell(startRow + 2, 3).value = this.projectInfo.name;
+                sheet.getCell(startRow + 2, 6).value = '材料缩写|Abbreviation：';
+                sheet.getCell(startRow + 2, 1).font = labelFont;
+                sheet.getCell(startRow + 2, 3).font = dataFont;
+                sheet.getCell(startRow + 2, 6).font = labelFont;
+
+                sheet.getCell(startRow + 3, 1).value = '项目编号|Project No.：';
+                sheet.getCell(startRow + 3, 3).value = this.projectInfo.no;
+                sheet.getCell(startRow + 3, 6).value = '发行日期|Issued Date：';
+                sheet.getCell(startRow + 3, 8).value = this.projectInfo.date;
+                sheet.getCell(startRow + 3, 1).font = labelFont;
+                sheet.getCell(startRow + 3, 3).font = dataFont;
+                sheet.getCell(startRow + 3, 6).font = labelFont;
+                sheet.getCell(startRow + 3, 8).font = normalFont;
+
+                sheet.getCell(startRow + 4, 6).value = '制作人|Computed By：';
+                sheet.getCell(startRow + 5, 6).value = '校对人| Check By：';
+                sheet.getCell(startRow + 4, 6).font = labelFont;
+                sheet.getCell(startRow + 5, 6).font = labelFont;
+
+                sheet.getCell(startRow + 6, 1).value = '材料名称 | Model Name：';
+                sheet.getCell(startRow + 6, 3).value = item.materialNameCn;
+                sheet.getCell(startRow + 6, 7).value = '品牌 |Brand：';
+                sheet.getCell(startRow + 6, 8).value = item.brand || '';
+                sheet.getCell(startRow + 6, 1).font = labelFont;
+                sheet.getCell(startRow + 6, 3).font = dataFont;
+                sheet.getCell(startRow + 6, 7).font = labelFont;
+                sheet.getCell(startRow + 6, 8).font = dataFont;
+
+                sheet.getCell(startRow + 7, 1).value = '型号|Model No.：';
+                sheet.getCell(startRow + 7, 3).value = item.modelNo || '-';
+                sheet.getCell(startRow + 7, 7).value = '材料编号 | Item No.：';
+                sheet.getCell(startRow + 7, 8).value = item.itemNo;
+                sheet.getCell(startRow + 7, 1).font = labelFont;
+                sheet.getCell(startRow + 7, 3).font = normalFont;
+                sheet.getCell(startRow + 7, 7).font = labelFont;
+                sheet.getCell(startRow + 7, 8).font = dataFont;
+
+                // 样品或照片标题行
+                sheet.mergeCells(startRow + 8, 1, startRow + 8, 6);
+                sheet.getCell(startRow + 8, 1).value = '样品或照片 Sample or Photo';
+                sheet.getCell(startRow + 8, 1).font = { name: '微软雅黑', size: 10, bold: true };
+                sheet.getCell(startRow + 8, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
+                sheet.getCell(startRow + 8, 1).font = { name: '微软雅黑', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+                sheet.getCell(startRow + 8, 1).alignment = { horizontal: 'left', vertical: 'middle' };
+                sheet.getCell(startRow + 8, 1).border = { top: { style: 'thin' }, bottom: { style: 'thin' } };
+
+                // 图片区域 - 219.95pt
+                sheet.mergeCells(startRow + 9, 1, startRow + 10, 6);
+                sheet.getRow(startRow + 9).height = 219.95;
+                sheet.getRow(startRow + 10).height = 219.95;
+
+                // 插入图片
+                if (item.imageData && item.imageData.startsWith('data:image')) {
+                    try {
+                        const imageId = workbook.addImage({
+                            base64: item.imageData,
+                            extension: 'png'
+                        });
+                        sheet.addImage(imageId, {
+                            tl: { col: 0, row: startRow + 8 },
+                            ext: { width: 500, height: 293 }
+                        });
+                    } catch (e) {
+                        console.error('图片插入失败:', e);
+                    }
+                }
+
+                // 技术参数区
+                sheet.mergeCells(startRow + 9, 7, startRow + 10, 8);
+                sheet.getCell(startRow + 9, 7).value = item.technicalRequirement || '技术参数要求：\n防滑系数≥0.6\n石材六面防护处理\n符合GB 6566-2001标准';
+                sheet.getCell(startRow + 9, 7).font = normalFont;
+                sheet.getCell(startRow + 9, 7).alignment = { wrapText: true, vertical: 'top' };
+
+                // 表格标题行
+                sheet.getCell(startRow + 11, 1).value = '使用区域|Area';
+                sheet.getCell(startRow + 11, 5).value = '供应商|Supplier';
+                sheet.getCell(startRow + 11, 7).value = '备注|Others';
+                [1, 5, 7].forEach(col => {
+                    const cell = sheet.getCell(startRow + 11, col);
+                    cell.font = { name: '微软雅黑', size: 10, bold: true };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+                });
+
+                // 表格数据行
+                sheet.mergeCells(startRow + 12, 1, startRow + 12, 4);
+                sheet.getCell(startRow + 12, 1).value = item.areaUsage || '';
+                sheet.getCell(startRow + 12, 1).font = normalFont;
+                sheet.getCell(startRow + 12, 1).alignment = { wrapText: true, vertical: 'top' };
+                sheet.getCell(startRow + 12, 1).border = {
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
+                };
+
+                sheet.mergeCells(startRow + 12, 5, startRow + 12, 6);
+                sheet.getCell(startRow + 12, 5).value = item.supplier || '';
+                sheet.getCell(startRow + 12, 5).font = normalFont;
+                sheet.getCell(startRow + 12, 5).alignment = { wrapText: true, vertical: 'top' };
+                sheet.getCell(startRow + 12, 5).border = {
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
+                };
+
+                sheet.mergeCells(startRow + 12, 7, startRow + 12, 8);
+                sheet.getCell(startRow + 12, 7).value = item.remarks || '';
+                sheet.getCell(startRow + 12, 7).font = normalFont;
+                sheet.getCell(startRow + 12, 7).alignment = { wrapText: true, vertical: 'top' };
+                sheet.getCell(startRow + 12, 7).border = {
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
+                };
+
+                // 加工参数标题行
+                sheet.getCell(startRow + 13, 1).value = '加工参数/材料特性备注|Note';
+                sheet.getCell(startRow + 13, 5).value = '联系人|Contact';
+                sheet.getCell(startRow + 13, 1).font = { name: '微软雅黑', size: 10, bold: true };
+                sheet.getCell(startRow + 13, 5).font = { name: '微软雅黑', size: 10, bold: true };
+                sheet.getCell(startRow + 13, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                sheet.getCell(startRow + 13, 5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+
+                // 加工参数数据行
+                sheet.getCell(startRow + 14, 1).value = '厚度：';
+                sheet.getCell(startRow + 14, 2).value = item.thickness || '';
+                sheet.getCell(startRow + 14, 3).value = '防火等级：';
+                sheet.getCell(startRow + 14, 4).value = item.fireRating || '';
+                sheet.getCell(startRow + 14, 5).value = item.contactPerson || '';
+                sheet.getCell(startRow + 14, 1).font = normalFont;
+                sheet.getCell(startRow + 14, 2).font = normalFont;
+                sheet.getCell(startRow + 14, 3).font = normalFont;
+                sheet.getCell(startRow + 14, 4).font = normalFont;
+                sheet.getCell(startRow + 14, 5).font = item.contactPerson ? blueFont : normalFont;
+
+                sheet.getCell(startRow + 15, 1).value = '表面效果：';
+                sheet.getCell(startRow + 15, 2).value = item.installationMethod || '';
+                sheet.getCell(startRow + 15, 5).value = '参考价格|Reference';
+                sheet.getCell(startRow + 15, 1).font = normalFont;
+                sheet.getCell(startRow + 15, 2).font = normalFont;
+                sheet.getCell(startRow + 15, 5).font = { name: '微软雅黑', size: 10, bold: true };
+
+                sheet.getCell(startRow + 16, 1).value = '安装方式：';
+                sheet.getCell(startRow + 16, 2).value = item.installationMethod || '';
+                sheet.getCell(startRow + 16, 5).value = item.referencePrice ? `${item.referencePrice}/㎡` : '';
+                sheet.getCell(startRow + 16, 1).font = normalFont;
+                sheet.getCell(startRow + 16, 2).font = normalFont;
+                sheet.getCell(startRow + 16, 5).font = normalFont;
+
+                sheet.getCell(startRow + 17, 1).value = '加工备注：';
+                sheet.getCell(startRow + 17, 1).font = normalFont;
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
+
+
