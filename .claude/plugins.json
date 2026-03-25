@@ -1,0 +1,300 @@
+{
+  "version": 1,
+  "lastUpdated": 1774455436424,
+  "plugins": [
+    {
+      "filename": "adapt",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\adapt",
+        "filename": "adapt",
+        "name": "adapt",
+        "description": "Adapt designs to work across different screen sizes, devices, contexts, or platforms. Implements breakpoints, fluid layouts, and touch targets. Use when the user mentions responsive design, mobile layouts, breakpoints, viewport adaptation, or cross-device compatibility.",
+        "category": "skills",
+        "type": "skill",
+        "size": 7328,
+        "contentHash": "41a52367e71227a09a724ab1106e48e1d73766ed55dbd15302352984f7f68817"
+      }
+    },
+    {
+      "filename": "animate",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\animate",
+        "filename": "animate",
+        "name": "animate",
+        "description": "Review a feature and enhance it with purposeful animations, micro-interactions, and motion effects that improve usability and delight. Use when the user mentions adding animation, transitions, micro-interactions, motion design, hover effects, or making the UI feel more alive.",
+        "category": "skills",
+        "type": "skill",
+        "size": 7849,
+        "contentHash": "97b5694750bb8145c1781a7af50417fe849076f1890e2e8c1c7030613888f69f"
+      }
+    },
+    {
+      "filename": "arrange",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\arrange",
+        "filename": "arrange",
+        "name": "arrange",
+        "description": "Improve layout, spacing, and visual rhythm. Fixes monotonous grids, inconsistent spacing, and weak visual hierarchy. Use when the user mentions layout feeling off, spacing issues, visual hierarchy, crowded UI, alignment problems, or wanting better composition.",
+        "category": "skills",
+        "type": "skill",
+        "size": 7528,
+        "contentHash": "3e8929d8b641251ee0f4d2d54b501e36378560417bb52b5cb733186d511b34ed"
+      }
+    },
+    {
+      "filename": "audit",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\audit",
+        "filename": "audit",
+        "name": "audit",
+        "description": "Run technical quality checks across accessibility, performance, theming, responsive design, and anti-patterns. Generates a scored report with P0-P3 severity ratings and actionable plan. Use when the user wants an accessibility check, performance audit, or technical quality review.",
+        "category": "skills",
+        "type": "skill",
+        "size": 7766,
+        "contentHash": "add49a8dab878dbb479bdfc7d3033666754e0bd8459c66a94d8344387ecbacda"
+      }
+    },
+    {
+      "filename": "bolder",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\bolder",
+        "filename": "bolder",
+        "name": "bolder",
+        "description": "Amplify safe or boring designs to make them more visually interesting and stimulating. Increases impact while maintaining usability. Use when the user says the design looks bland, generic, too safe, lacks personality, or wants more visual impact and character.",
+        "category": "skills",
+        "type": "skill",
+        "size": 6860,
+        "contentHash": "714555ba6cd357b40d93e365714ddf445427990332e95c7f80998796f0dd040d"
+      }
+    },
+    {
+      "filename": "clarify",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\clarify",
+        "filename": "clarify",
+        "name": "clarify",
+        "description": "Improve unclear UX copy, error messages, microcopy, labels, and instructions to make interfaces easier to understand. Use when the user mentions confusing text, unclear labels, bad error messages, hard-to-follow instructions, or wanting better UX writing.",
+        "category": "skills",
+        "type": "skill",
+        "size": 6944,
+        "contentHash": "ec7f42868dbf4a67045de7c9363eb3e8b203bb82c4944c4473fe0cfc4ce29803"
+      }
+    },
+    {
+      "filename": "colorize",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\colorize",
+        "filename": "colorize",
+        "name": "colorize",
+        "description": "Add strategic color to features that are too monochromatic or lack visual interest, making interfaces more engaging and expressive. Use when the user mentions the design looking gray, dull, lacking warmth, needing more color, or wanting a more vibrant or expressive palette.",
+        "category": "skills",
+        "type": "skill",
+        "size": 7033,
+        "contentHash": "c7449fa12334bb26553d3acac23c433c29b4767ec38731b9106a5105a9220c77"
+      }
+    },
+    {
+      "filename": "critique",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\critique",
+        "filename": "critique",
+        "name": "critique",
+        "description": "Evaluate design from a UX perspective, assessing visual hierarchy, information architecture, emotional resonance, cognitive load, and overall quality with quantitative scoring, persona-based testing, and actionable feedback. Use when the user asks to review, critique, evaluate, or give feedback on a design or component.",
+        "category": "skills",
+        "type": "skill",
+        "size": 32806,
+        "contentHash": "b4f7e99cb276944d3889e23bcf0b8106ae027acb9b627c2d870758a029350286"
+      }
+    },
+    {
+      "filename": "delight",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\delight",
+        "filename": "delight",
+        "name": "delight",
+        "description": "Add moments of joy, personality, and unexpected touches that make interfaces memorable and enjoyable to use. Elevates functional to delightful. Use when the user asks to add polish, personality, animations, micro-interactions, delight, or make an interface feel fun or memorable.",
+        "category": "skills",
+        "type": "skill",
+        "size": 10327,
+        "contentHash": "a6e99d4589a08014a6a72dc3819ff87428c4abe8dbd736dcbbf27e04fac57bbc"
+      }
+    },
+    {
+      "filename": "distill",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\distill",
+        "filename": "distill",
+        "name": "distill",
+        "description": "Strip designs to their essence by removing unnecessary complexity. Great design is simple, powerful, and clean. Use when the user asks to simplify, declutter, reduce noise, remove elements, or make a UI cleaner and more focused.",
+        "category": "skills",
+        "type": "skill",
+        "size": 6370,
+        "contentHash": "f831612e3d58f0ea1da61c31b0a48b5b44a86e6432ca3a96a47996602ec5bb8b"
+      }
+    },
+    {
+      "filename": "extract",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\extract",
+        "filename": "extract",
+        "name": "extract",
+        "description": "Extract and consolidate reusable components, design tokens, and patterns into your design system. Identifies opportunities for systematic reuse and enriches your component library. Use when the user asks to create components, refactor repeated UI patterns, build a design system, or extract tokens.",
+        "category": "skills",
+        "type": "skill",
+        "size": 4041,
+        "contentHash": "2b7ae776e54a0877993dd9b533c21e18d00701a84501a3b9519147a8b39adff8"
+      }
+    },
+    {
+      "filename": "frontend-design",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\frontend-design",
+        "filename": "frontend-design",
+        "name": "frontend-design",
+        "description": "Create distinctive, production-grade frontend interfaces with high design quality. Generates creative, polished code that avoids generic AI aesthetics. Use when the user asks to build web components, pages, artifacts, posters, or applications, or when any design skill requires project context.",
+        "category": "skills",
+        "type": "skill",
+        "size": 45012,
+        "contentHash": "f20f9d2f67cf7440f07e8c6c22aa58326ae9f957c41376664f711466fc7c5bd2"
+      }
+    },
+    {
+      "filename": "harden",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\harden",
+        "filename": "harden",
+        "name": "harden",
+        "description": "Improve interface resilience through better error handling, i18n support, text overflow handling, and edge case management. Makes interfaces robust and production-ready. Use when the user asks to harden, make production-ready, handle edge cases, add error states, or fix overflow and i18n issues.",
+        "category": "skills",
+        "type": "skill",
+        "size": 9412,
+        "contentHash": "19b9ed852b964558913c0b5624d516511eb6cd1e8fb37e91954911ea61c52e09"
+      }
+    },
+    {
+      "filename": "normalize",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\normalize",
+        "filename": "normalize",
+        "name": "normalize",
+        "description": "Audits and realigns UI to match design system standards, spacing, tokens, and patterns. Use when the user mentions consistency, design drift, mismatched styles, tokens, or wants to bring a feature back in line with the system.",
+        "category": "skills",
+        "type": "skill",
+        "size": 4264,
+        "contentHash": "889aeb73f079b1b77663e98743eee75eaed24aff7447c98907c42755e947a1dd"
+      }
+    },
+    {
+      "filename": "onboard",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\onboard",
+        "filename": "onboard",
+        "name": "onboard",
+        "description": "Designs and improves onboarding flows, empty states, and first-run experiences to help users reach value quickly. Use when the user mentions onboarding, first-time users, empty states, activation, getting started, or new user flows.",
+        "category": "skills",
+        "type": "skill",
+        "size": 8576,
+        "contentHash": "d544f4e4e43216f65e3bb27d76f68f9ffe2ce0b12602fa938c93ecd6b73b53af"
+      }
+    },
+    {
+      "filename": "optimize",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\optimize",
+        "filename": "optimize",
+        "name": "optimize",
+        "description": "Diagnoses and fixes UI performance across loading speed, rendering, animations, images, and bundle size. Use when the user mentions slow, laggy, janky, performance, bundle size, load time, or wants a faster, smoother experience.",
+        "category": "skills",
+        "type": "skill",
+        "size": 8053,
+        "contentHash": "60ae17a9295799121a7288afb00372d85b54d84a845bb320db86da606ba28b7e"
+      }
+    },
+    {
+      "filename": "overdrive",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\overdrive",
+        "filename": "overdrive",
+        "name": "overdrive",
+        "description": "Pushes interfaces past conventional limits with technically ambitious implementations — shaders, spring physics, scroll-driven reveals, 60fps animations. Use when the user wants to wow, impress, go all-out, or make something that feels extraordinary.",
+        "category": "skills",
+        "type": "skill",
+        "size": 9877,
+        "contentHash": "8189ca2a8bb6663ac6bead1fac5c1dc725d1840d6a176b3a5d2372ad520c3302"
+      }
+    },
+    {
+      "filename": "polish",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\polish",
+        "filename": "polish",
+        "name": "polish",
+        "description": "Performs a final quality pass fixing alignment, spacing, consistency, and micro-detail issues before shipping. Use when the user mentions polish, finishing touches, pre-launch review, something looks off, or wants to go from good to great.",
+        "category": "skills",
+        "type": "skill",
+        "size": 8308,
+        "contentHash": "c424af2edaac6d0765c6fdba1acb95db31ca0715f3f05cd52e07da7ca519bf04"
+      }
+    },
+    {
+      "filename": "quieter",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\quieter",
+        "filename": "quieter",
+        "name": "quieter",
+        "description": "Tones down visually aggressive or overstimulating designs, reducing intensity while preserving quality. Use when the user mentions too bold, too loud, overwhelming, aggressive, garish, or wants a calmer, more refined aesthetic.",
+        "category": "skills",
+        "type": "skill",
+        "size": 5245,
+        "contentHash": "5d38c4defefc7d4bbdc4a837e36df84194afe38652bfdf873eadb8d09c23fcee"
+      }
+    },
+    {
+      "filename": "teach-impeccable",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\teach-impeccable",
+        "filename": "teach-impeccable",
+        "name": "teach-impeccable",
+        "description": "One-time setup that gathers design context for your project and saves it to your AI config file. Run once to establish persistent design guidelines.",
+        "category": "skills",
+        "type": "skill",
+        "size": 2941,
+        "contentHash": "f89acc3ad1e856c28bdbe61d82bb398befb6f034d462c718d58199938340f741"
+      }
+    },
+    {
+      "filename": "typeset",
+      "type": "skill",
+      "metadata": {
+        "sourcePath": "skills\\typeset",
+        "filename": "typeset",
+        "name": "typeset",
+        "description": "Improves typography by fixing font choices, hierarchy, sizing, weight, and readability so text feels intentional. Use when the user mentions fonts, type, readability, text hierarchy, sizing looks off, or wants more polished, intentional typography.",
+        "category": "skills",
+        "type": "skill",
+        "size": 5891,
+        "contentHash": "e1dfa771511dbb5bc89287f0b5c53448d9a980c3566f3009755c3af3b67b41cd"
+      }
+    }
+  ]
+}

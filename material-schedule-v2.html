@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>材料表管理系统 V2</title>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e5e5e5;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .project-info {
+            font-size: 13px;
+            color: #666;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-section h3 {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .filter-item {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-item:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-item.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .filter-count {
+            font-size: 12px;
+            color: #999;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .filter-item.active .filter-count {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+            max-width: 400px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            padding: 24px;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-draft {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-confirmed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧导航 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>材料表管理 V2</h1>
+                <div class="project-info" onclick="app.editProjectInfo()">
+                    <div id="projectName" style="font-weight: 600;">未命名项目</div>
+                    <div id="projectNo" style="font-size: 11px; color: #999;">点击编辑项目信息</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>视图</h3>
+                <div class="filter-item active" data-view="all">
+                    <span>全部材料</span>
+                    <span class="filter-count" id="count-all">0</span>
+                </div>
+                <div class="filter-item" data-view="incomplete">
+                    <span>待完善</span>
+                    <span class="filter-count" id="count-incomplete">0</span>
+                </div>
+                <div class="filter-item" data-view="confirmed">
+                    <span>已确认</span>
+                    <span class="filter-count" id="count-confirmed">0</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="floorSection">
+                <h3>按楼层</h3>
+                <div id="floorFilters"></div>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <div class="toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="搜索材料...">
+                </div>
+                <button class="btn btn-primary" onclick="app.addNew()">+ 新增材料</button>
+                <button class="btn btn-secondary" onclick="app.generateTestData()">生成测试数据</button>
+                <button class="btn btn-secondary" onclick="app.exportExcel()">导出 Excel</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px">
+                                <input type="checkbox" id="selectAll" onchange="app.toggleSelectAll()">
+                            </th>
+                            <th>编号</th>
+                            <th>类别</th>
+                            <th>材料名称</th>
+                            <th>品牌</th>
+                            <th>楼层</th>
+                            <th>空间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+                <div id="emptyState" class="empty-state" style="display:none">
+                    <div class="empty-state-icon">📋</div>
+                    <div>暂无材料数据</div>
+                    <div style="margin-top: 8px; font-size: 14px;">点击"新增材料"开始添加</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑材料模态框 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新增材料</h2>
+                <button class="close-btn" onclick="app.closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>类别 *</label>
+                    <select id="editCategory" onchange="app.onCategoryChange()">
+                        <option value="ST">ST - 石材</option>
+                        <option value="WD">WD - 木饰面</option>
+                        <option value="PT">PT - 涂料</option>
+                        <option value="MT">MT - 金属</option>
+                        <option value="CR">CR - 饰面类</option>
+                        <option value="GL">GL - 玻璃</option>
+                        <option value="CU">CU - 定制类</option>
+                        <option value="MR">MR - 镜面类</option>
+                        <option value="OS">OS - 其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>材料编号 *</label>
+                    <input type="text" id="editItemNo" placeholder="ST-01">
+                </div>
+                <div class="form-group">
+                    <label>材料名称 *</label>
+                    <input type="text" id="editMaterialNameCn" placeholder="灰色大理石">
+                </div>
+                <div class="form-group">
+                    <label>品牌</label>
+                    <input type="text" id="editBrand" placeholder="品牌名称">
+                </div>
+                <div class="form-group">
+                    <label>楼层</label>
+                    <input type="text" id="editFloor" placeholder="1F, 2F">
+                </div>
+                <div class="form-group">
+                    <label>空间</label>
+                    <input type="text" id="editSpace" placeholder="客厅, 卧室">
+                </div>
+                <div class="form-group">
+                    <label>使用区域</label>
+                    <textarea id="editAreaUsage" placeholder="公区地面、卫生间墙面..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>供应商</label>
+                    <input type="text" id="editSupplier" placeholder="供应商名称">
+                </div>
+                <div class="form-group">
+                    <label>联系电话</label>
+                    <input type="text" id="editPhone" placeholder="联系电话">
+                </div>
+                <div class="form-group">
+                    <label>参考价格（元/㎡）</label>
+                    <input type="number" id="editReferencePrice" placeholder="580">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select id="editStatus">
+                        <option value="草稿">草稿</option>
+                        <option value="待确认">待确认</option>
+                        <option value="已确认">已确认</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="app.saveEdit()">保存</button>
+                <button class="btn btn-secondary" onclick="app.closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 项目信息模态框 -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>项目信息</h2>
+                <button class="close-btn" onclick="app.closeProjectModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>项目名称</label>
+                    <input type="text" id="projectNameInput" placeholder="宁波·江山万里侯府">
+                </div>
+                <div class="form-group">
+                    <label>项目编号</label>
+                    <input type="text" id="projectNoInput" placeholder="工程编号">
+                </div>
+                <div class="form-group">
+                    <label>发行日期</label>
+                    <input type="date" id="projectDateInput">
+                </div>
+                <div class="form-group">
+                    <label>设计公司</label>
+                    <input type="text" id="projectCompanyInput" placeholder="盒几设计">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="app.saveProjectInfo()">保存</button>
+                <button class="btn btn-secondary" onclick="app.closeProjectModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            data: [],
+            projectInfo: {
+                projectName: '未命名项目',
+                projectNo: '工程编号',
+                issuedDate: new Date().toISOString().split('T')[0],
+                company: '盒几设计'
+            },
+            categories: {
+                'ST': '石材',
+                'WD': '木饰面',
+                'PT': '涂料',
+                'MT': '金属',
+                'CR': '饰面类',
+                'GL': '玻璃',
+                'CU': '定制类',
+                'MR': '镜面类',
+                'OS': '其他'
+            },
+            currentFilter: { type: 'all' },
+            searchTerm: '',
+            selectedIds: new Set(),
+
+            init() {
+                this.loadData();
+                this.loadProjectInfo();
+                this.render();
+                this.bindEvents();
+            },
+
+            loadData() {
+                const saved = localStorage.getItem('materialsV2');
+                if (saved) {
+                    this.data = JSON.parse(saved);
+                }
+            },
+
+            saveData() {
+                localStorage.setItem('materialsV2', JSON.stringify(this.data));
+            },
+
+            loadProjectInfo() {
+                const saved = localStorage.getItem('projectInfoV2');
+                if (saved) {
+                    this.projectInfo = JSON.parse(saved);
+                    document.getElementById('projectName').textContent = this.projectInfo.projectName;
+                    document.getElementById('projectNo').textContent = this.projectInfo.projectNo;
+                }
+            },
+
+            saveProjectInfo() {
+                this.projectInfo.projectName = document.getElementById('projectNameInput').value;
+                this.projectInfo.projectNo = document.getElementById('projectNoInput').value;
+                this.projectInfo.issuedDate = document.getElementById('projectDateInput').value;
+                this.projectInfo.company = document.getElementById('projectCompanyInput').value;
+                localStorage.setItem('projectInfoV2', JSON.stringify(this.projectInfo));
+                document.getElementById('projectName').textContent = this.projectInfo.projectName;
+                document.getElementById('projectNo').textContent = this.projectInfo.projectNo;
+                this.closeProjectModal();
+            },
+
+            bindEvents() {
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.render();
+                });
+
+                document.querySelectorAll('.filter-item[data-view]').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+                        this.currentFilter = { type: 'view', value: e.currentTarget.dataset.view };
+                        this.render();
+                    });
+                });
+            },
+
+            render() {
+                this.renderTable();
+                this.updateCounts();
+                this.updateFloorFilters();
+            },
+
+            renderTable() {
+                let filtered = [...this.data];
+
+                if (this.currentFilter.type === 'view') {
+                    if (this.currentFilter.value === 'incomplete') {
+                        filtered = filtered.filter(item => !item.brand || !item.materialNameCn || !item.areaUsage);
+                    } else if (this.currentFilter.value === 'confirmed') {
+                        filtered = filtered.filter(item => item.status === '已确认');
+                    }
+                } else if (this.currentFilter.type === 'floor') {
+                    filtered = filtered.filter(item => item.floor === this.currentFilter.value);
+                }
+
+                if (this.searchTerm) {
+                    filtered = filtered.filter(item =>
+                        (item.materialNameCn || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.brand || '').toLowerCase().includes(this.searchTerm) ||
+                        (item.itemNo || '').toLowerCase().includes(this.searchTerm)
+                    );
+                }
+
+                const tbody = document.getElementById('tableBody');
+                const emptyState = document.getElementById('emptyState');
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                tbody.innerHTML = filtered.map(item => `
+                    <tr>
+                        <td><input type="checkbox" ${this.selectedIds.has(String(item.id)) ? 'checked' : ''} onchange="app.toggleSelect(${item.id})"></td>
+                        <td>${item.itemNo || '-'}</td>
+                        <td>${item.category} - ${this.categories[item.category]}</td>
+                        <td>${item.materialNameCn || '-'}</td>
+                        <td>${item.brand || '-'}</td>
+                        <td>${item.floor || '-'}</td>
+                        <td>${item.space || '-'}</td>
+                        <td>${this.getStatusBadge(item.status)}</td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;" onclick="app.edit(${item.id})">编辑</button>
+                            <button class="btn btn-danger" style="padding: 4px 12px; font-size: 12px;" onclick="app.delete(${item.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            getStatusBadge(status) {
+                const map = {
+                    '草稿': 'status-draft',
+                    '待确认': 'status-pending',
+                    '已确认': 'status-confirmed'
+                };
+                return `<span class="status-badge ${map[status] || 'status-draft'}">${status || '草稿'}</span>`;
+            },
+
+            updateCounts() {
+                document.getElementById('count-all').textContent = this.data.length;
+                document.getElementById('count-incomplete').textContent =
+                    this.data.filter(item => !item.brand || !item.materialNameCn || !item.areaUsage).length;
+                document.getElementById('count-confirmed').textContent =
+                    this.data.filter(item => item.status === '已确认').length;
+            },
+
+            updateFloorFilters() {
+                const floors = [...new Set(this.data.map(i => i.floor).filter(Boolean))].sort();
+                const container = document.getElementById('floorFilters');
+                container.innerHTML = floors.map(floor => `
+                    <div class="filter-item" data-floor="${floor}">
+                        <span>${floor}</span>
+                        <span class="filter-count">${this.data.filter(i => i.floor === floor).length}</span>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('.filter-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+                        this.currentFilter = { type: 'floor', value: e.currentTarget.dataset.floor };
+                        this.render();
+                    });
+                });
+            },
+
+            addNew() {
+                document.getElementById('modalTitle').textContent = '新增材料';
+                document.getElementById('editId').value = '';
+                document.getElementById('editCategory').value = 'ST';
+                document.getElementById('editItemNo').value = this.generateItemNo('ST');
+                document.getElementById('editMaterialNameCn').value = '';
+                document.getElementById('editBrand').value = '';
+                document.getElementById('editFloor').value = '';
+                document.getElementById('editSpace').value = '';
+                document.getElementById('editAreaUsage').value = '';
+                document.getElementById('editSupplier').value = '';
+                document.getElementById('editPhone').value = '';
+                document.getElementById('editReferencePrice').value = '';
+                document.getElementById('editStatus').value = '草稿';
+                document.getElementById('editModal').classList.add('show');
+            },
+
+            edit(id) {
+                const item = this.data.find(i => i.id === id);
+                if (!item) return;
+
+                document.getElementById('modalTitle').textContent = '编辑材料';
+                document.getElementById('editId').value = item.id;
+                document.getElementById('editCategory').value = item.category;
+                document.getElementById('editItemNo').value = item.itemNo;
+                document.getElementById('editMaterialNameCn').value = item.materialNameCn || '';
+                document.getElementById('editBrand').value = item.brand || '';
+                document.getElementById('editFloor').value = item.floor || '';
+                document.getElementById('editSpace').value = item.space || '';
+                document.getElementById('editAreaUsage').value = item.areaUsage || '';
+                document.getElementById('editSupplier').value = item.supplier || '';
+                document.getElementById('editPhone').value = item.phone || '';
+                document.getElementById('editReferencePrice').value = item.referencePrice || '';
+                document.getElementById('editStatus').value = item.status || '草稿';
+                document.getElementById('editModal').classList.add('show');
+            },
+
+            saveEdit() {
+                const id = document.getElementById('editId').value;
+                const data = {
+                    category: document.getElementById('editCategory').value,
+                    itemNo: document.getElementById('editItemNo').value,
+                    materialNameCn: document.getElementById('editMaterialNameCn').value,
+                    brand: document.getElementById('editBrand').value,
+                    floor: document.getElementById('editFloor').value,
+                    space: document.getElementById('editSpace').value,
+                    areaUsage: document.getElementById('editAreaUsage').value,
+                    supplier: document.getElementById('editSupplier').value,
+                    phone: document.getElementById('editPhone').value,
+                    referencePrice: document.getElementById('editReferencePrice').value,
+                    status: document.getElementById('editStatus').value
+                };
+
+                if (!data.itemNo || !data.materialNameCn) {
+                    alert('请填写必填字段');
+                    return;
+                }
+
+                if (id) {
+                    const item = this.data.find(i => i.id == id);
+                    Object.assign(item, data);
+                } else {
+                    data.id = Date.now();
+                    this.data.push(data);
+                }
+
+                this.saveData();
+                this.render();
+                this.closeModal();
+            },
+
+            delete(id) {
+                if (!confirm('确定要删除这条材料吗？')) return;
+                this.data = this.data.filter(i => i.id !== id);
+                this.saveData();
+                this.render();
+            },
+
+            closeModal() {
+                document.getElementById('editModal').classList.remove('show');
+            },
+
+            editProjectInfo() {
+                document.getElementById('projectNameInput').value = this.projectInfo.projectName;
+                document.getElementById('projectNoInput').value = this.projectInfo.projectNo;
+                document.getElementById('projectDateInput').value = this.projectInfo.issuedDate;
+                document.getElementById('projectCompanyInput').value = this.projectInfo.company;
+                document.getElementById('projectModal').classList.add('show');
+            },
+
+            closeProjectModal() {
+                document.getElementById('projectModal').classList.remove('show');
+            },
+
+            onCategoryChange() {
+                const category = document.getElementById('editCategory').value;
+                document.getElementById('editItemNo').value = this.generateItemNo(category);
+            },
+
+            generateItemNo(category) {
+                const items = this.data.filter(i => i.category === category);
+                const maxNum = items.reduce((max, item) => {
+                    const match = item.itemNo?.match(/\d+$/);
+                    return match ? Math.max(max, parseInt(match[0])) : max;
+                }, 0);
+                return `${category}-${String(maxNum + 1).padStart(2, '0')}`;
+            },
+
+            toggleSelect(id) {
+                id = String(id);
+                if (this.selectedIds.has(id)) {
+                    this.selectedIds.delete(id);
+                } else {
+                    this.selectedIds.add(id);
+                }
+                this.render();
+            },
+
+            toggleSelectAll() {
+                const checked = document.getElementById('selectAll').checked;
+                if (checked) {
+                    this.data.forEach(item => this.selectedIds.add(String(item.id)));
+                } else {
+                    this.selectedIds.clear();
+                }
+                this.render();
+            },
+
+            generateTestData() {
+                if (!confirm('确定要生成30条测试数据吗？')) return;
+
+                const materials = [
+                    '灰色大理石', '白洞大理石', '冷翡翠大理石', '宝格丽大理石', '卡拉卡塔紫',
+                    '透光玉石', '黑色大理石', '木饰面', '橡木饰面', '胡桃木饰面',
+                    '防水艺术漆', '金属漆', '乳胶漆', '不锈钢板', '铜板',
+                    '铝板', '瓷砖', '墙纸', '软包', '钢化玻璃',
+                    '夹胶玻璃', '定制柜体', '定制家具', '镜面', '镜面不锈钢',
+                    '石英石', '人造石', '实木地板', '复合地板', '地毯'
+                ];
+
+                const brands = ['之时石材', '东鹏', '马可波罗', '诺贝尔', '蒙娜丽莎', '欧派', '索菲亚', '顾家'];
+                const floors = ['B1', '1F', '2F', '3F', '4F'];
+                const spaces = ['客厅', '卧室', '卫生间', '厨房', '书房', '餐厅', '玄关', '阳台'];
+                const categories = ['ST', 'WD', 'PT', 'MT', 'CR', 'GL', 'CU', 'MR', 'OS'];
+                const statuses = ['草稿', '待确认', '已确认'];
+
+                for (let i = 0; i < 30; i++) {
+                    const category = categories[i % categories.length];
+                    const material = materials[i % materials.length];
+
+                    this.data.push({
+                        id: Date.now() + i,
+                        category: category,
+                        itemNo: this.generateItemNo(category),
+                        materialNameCn: material,
+                        brand: brands[Math.floor(Math.random() * brands.length)],
+                        floor: floors[Math.floor(Math.random() * floors.length)],
+                        space: spaces[Math.floor(Math.random() * spaces.length)],
+                        areaUsage: `${spaces[Math.floor(Math.random() * spaces.length)]}墙面、${spaces[Math.floor(Math.random() * spaces.length)]}地面`,
+                        supplier: brands[Math.floor(Math.random() * brands.length)],
+                        phone: '1305234' + String(Math.floor(Math.random() * 10000)).padStart(4, '0'),
+                        referencePrice: Math.floor(Math.random() * 500) + 100,
+                        status: statuses[Math.floor(Math.random() * statuses.length)]
+                    });
+                }
+
+                this.saveData();
+                this.render();
+                alert('已生成30条测试数据');
+            },
+
+            async exportExcel() {
+                const confirmedMaterials = this.data.filter(item => item.status === '已确认');
+                if (confirmedMaterials.length === 0) {
+                    alert('没有已确认的材料可导出');
+                    return;
+                }
+
+                const sortedMaterials = this.sortMaterials(confirmedMaterials);
+                sortedMaterials.forEach((item, index) => {
+                    item.pageNo = `P${String(index + 1).padStart(2, '0')}`;
+                });
+
+                const workbook = new ExcelJS.Workbook();
+
+                await this.createCoverSheetExcelJS(workbook);
+                await this.createCatalogSheetExcelJS(workbook, sortedMaterials);
+                await this.createCategorySheetsExcelJS(workbook, sortedMaterials);
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                const fileName = `${this.projectInfo.projectName}_材料表_${new Date().toISOString().split('T')[0]}.xlsx`;
+                saveAs(new Blob([buffer]), fileName);
+            },
+
+            sortMaterials(materials) {
+                const categoryOrder = {
+                    'ST': 1, 'WD': 2, 'PT': 3, 'MT': 4,
+                    'CR': 5, 'GL': 6, 'CU': 7, 'MR': 8, 'OS': 9
+                };
+                return materials.sort((a, b) => {
+                    const catDiff = categoryOrder[a.category] - categoryOrder[b.category];
+                    if (catDiff !== 0) return catDiff;
+                    return a.itemNo.localeCompare(b.itemNo);
+                });
+            },
+
+            async createCoverSheetExcelJS(workbook) {
+                const sheet = workbook.addWorksheet('A_封面');
+
+                // 设置列宽
+                sheet.columns = [
+                    { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 },
+                    { width: 10 }, { width: 20 }, { width: 10 }, { width: 15 }
+                ];
+
+                // 行5: H5显示"工程编号"
+                sheet.getCell('H5').value = '工程编号';
+                sheet.getCell('H5').font = { name: '微软雅黑', size: 12 };
+
+                // 行6: F6显示项目名称（24号、加粗、居中）
+                sheet.getCell('F6').value = this.projectInfo.projectName;
+                sheet.getCell('F6').font = { name: '微软雅黑', size: 24, bold: true };
+                sheet.getCell('F6').alignment = { horizontal: 'center', vertical: 'middle' };
+
+                // 行7: H7显示"Issued:", I7显示日期
+                sheet.getCell('H7').value = 'Issued:';
+                sheet.getCell('I7').value = this.projectInfo.issuedDate;
+                sheet.getCell('H7').font = { name: '微软雅黑', size: 12 };
+                sheet.getCell('I7').font = { name: '微软雅黑', size: 12 };
+
+                // 行8: E8显示文档类型
+                sheet.getCell('E8').value = '材料表/洁具表/灯具表/五金表/开关面板表/设备表';
+                sheet.getCell('E8').font = { name: '微软雅黑', size: 12 };
+
+                // 行9: H9显示备注
+                sheet.getCell('H9').value = '注：材料以最终蓝图为准';
+                sheet.getCell('H9').font = { name: '微软雅黑', size: 12 };
+            },
+
+            async createCatalogSheetExcelJS(workbook, materials) {
+                const sheet = workbook.addWorksheet('B_目录');
+
+                // 设置列宽
+                sheet.columns = [
+                    { width: 8 }, { width: 15 }, { width: 25 },
+                    { width: 55 }, { width: 38 }, { width: 8 }
+                ];
+
+                // 行1: A1显示公司名称
+                sheet.getCell('A1').value = this.projectInfo.company;
+                sheet.getCell('A1').font = { name: '微软雅黑', size: 14, bold: true };
+
+                // 行2: B2显示项目名称，E2显示"材料目录表"
+                sheet.getCell('B2').value = this.projectInfo.projectName;
+                sheet.getCell('B2').font = { name: '微软雅黑', size: 16, bold: true };
+                sheet.getCell('E2').value = '材料目录表';
+                sheet.getCell('E2').font = { name: '微软雅黑', size: 16, bold: true };
+                sheet.getCell('E2').alignment = { horizontal: 'center' };
+
+                // 行3: 字段标题
+                const headers = ['序号', '编号', '产品名称', '', '', '页码'];
+                headers.forEach((header, index) => {
+                    const cell = sheet.getCell(3, index + 1);
+                    cell.value = header;
+                    cell.font = { name: '微软雅黑', size: 12, bold: true };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                        left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                        bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                        right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+                    };
+                });
+
+                // 数据行
+                materials.forEach((item, index) => {
+                    const rowNum = index + 4;
+                    const row = sheet.getRow(rowNum);
+
+                    row.getCell(1).value = index + 1;
+                    row.getCell(2).value = item.itemNo;
+                    row.getCell(3).value = item.materialNameCn;
+                    row.getCell(4).value = item.areaUsage || '';
+                    row.getCell(5).value = '……………………………………………………';
+                    row.getCell(6).value = item.pageNo;
+
+                    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+                        cell.font = { name: '微软雅黑', size: 11 };
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                            left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                            bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+                            right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+                        };
+                        if (colNum === 1 || colNum === 2 || colNum === 6) {
+                            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                        } else {
+                            cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+                        }
+                    });
+                });
+            },
+
+            async createCategorySheetsExcelJS(workbook, materials) {
+                const grouped = {};
+                materials.forEach(item => {
+                    if (!grouped[item.category]) grouped[item.category] = [];
+                    grouped[item.category].push(item);
+                });
+
+                for (const category of Object.keys(grouped)) {
+                    const sheet = workbook.addWorksheet(category);
+                    sheet.columns = Array(8).fill({ width: 12 });
+
+                    let currentRow = 1;
+                    for (const item of grouped[category]) {
+                        if (currentRow > 1) currentRow++; // 材料间空行
+                        await this.createMaterialBlockExcelJS(sheet, item, currentRow);
+                        currentRow += 19;
+                    }
+                }
+            },
+
+            async createMaterialBlockExcelJS(sheet, item, startRow) {
+                const font = { name: '微软雅黑', size: 11 };
+                const boldFont = { name: '微软雅黑', size: 11, bold: true };
+
+                // 行1: H列显示类别标识
+                sheet.getCell(startRow, 8).value = item.category;
+                sheet.getCell(startRow, 8).font = boldFont;
+                sheet.getCell(startRow, 8).alignment = { horizontal: 'center' };
+
+                // 行3: 项目名称和材料缩写
+                sheet.getCell(startRow + 2, 1).value = '项目名称|Project：';
+                sheet.getCell(startRow + 2, 3).value = this.projectInfo.projectName;
+                sheet.getCell(startRow + 2, 6).value = '材料缩写|Abbreviation：';
+                [1, 3, 6].forEach(col => {
+                    sheet.getCell(startRow + 2, col).font = font;
+                });
+
+                // 行4: 项目编号和发行日期
+                sheet.getCell(startRow + 3, 1).value = '项目编号|Project No.：';
+                sheet.getCell(startRow + 3, 3).value = this.projectInfo.projectNo;
+                sheet.getCell(startRow + 3, 6).value = '发行日期|Issued Date：';
+                sheet.getCell(startRow + 3, 8).value = this.projectInfo.issuedDate;
+                [1, 3, 6, 8].forEach(col => {
+                    sheet.getCell(startRow + 3, col).font = font;
+                });
+
+                // 行5-6: 制作人和校对人
+                sheet.getCell(startRow + 4, 6).value = '制作人|Computed By：';
+                sheet.getCell(startRow + 5, 6).value = '校对人| Check By：';
+                sheet.getCell(startRow + 4, 6).font = font;
+                sheet.getCell(startRow + 5, 6).font = font;
+
+                // 行7: 材料名称和品牌
+                sheet.getCell(startRow + 6, 1).value = '材料名称 | Model Name：';
+                sheet.getCell(startRow + 6, 3).value = item.materialNameCn;
+                sheet.getCell(startRow + 6, 7).value = '品牌 |Brand：';
+                sheet.getCell(startRow + 6, 8).value = item.brand || '';
+                sheet.getCell(startRow + 6, 1).font = font;
+                sheet.getCell(startRow + 6, 3).font = boldFont;
+                sheet.getCell(startRow + 6, 7).font = font;
+                sheet.getCell(startRow + 6, 8).font = font;
+
+                // 行8: 型号和材料编号
+                sheet.getCell(startRow + 7, 1).value = '型号|Model No.：';
+                sheet.getCell(startRow + 7, 3).value = item.modelNo || '-';
+                sheet.getCell(startRow + 7, 7).value = '材料编号 | Item No.：';
+                sheet.getCell(startRow + 7, 8).value = item.itemNo;
+                sheet.getCell(startRow + 7, 1).font = font;
+                sheet.getCell(startRow + 7, 3).font = font;
+                sheet.getCell(startRow + 7, 7).font = font;
+                sheet.getCell(startRow + 7, 8).font = boldFont;
+
+                // 行9: 图片标题（合并A9:F9）
+                sheet.mergeCells(startRow + 8, 1, startRow + 8, 6);
+                sheet.getCell(startRow + 8, 1).value = '样品或照片 Sample or Photo';
+                sheet.getCell(startRow + 8, 1).font = boldFont;
+                sheet.getCell(startRow + 8, 1).border = {
+                    top: { style: 'thin' }
+                };
+
+                // 行10: 图片区域（合并A10:F10）和技术参数
+                sheet.mergeCells(startRow + 9, 1, startRow + 9, 6);
+                sheet.getRow(startRow + 9).height = 220;
+                sheet.getCell(startRow + 9, 7).value = '技术参数要求：\n防滑系数≥0.6\n石材六面防护处理\n符合GB 6566-2001标准';
+                sheet.getCell(startRow + 9, 7).font = { name: '微软雅黑', size: 10 };
+                sheet.getCell(startRow + 9, 7).alignment = { wrapText: true, vertical: 'top' };
+
+                // 行12: 使用区域标题行
+                sheet.getCell(startRow + 11, 1).value = '使用区域|Area';
+                sheet.getCell(startRow + 11, 5).value = '供应商|Supplier';
+                sheet.getCell(startRow + 11, 7).value = '备注|Others';
+                [1, 5, 7].forEach(col => {
+                    const cell = sheet.getCell(startRow + 11, col);
+                    cell.font = boldFont;
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+                });
+
+                // 行13: 使用区域内容（合并A13:D13）
+                sheet.mergeCells(startRow + 12, 1, startRow + 12, 4);
+                sheet.getCell(startRow + 12, 1).value = item.areaUsage || '';
+                sheet.getCell(startRow + 12, 1).font = font;
+                sheet.getCell(startRow + 12, 1).alignment = { wrapText: true, vertical: 'top' };
+                sheet.getCell(startRow + 12, 1).border = {
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
+                };
+
+                // 供应商（合并E13:F13）
+                sheet.mergeCells(startRow + 12, 5, startRow + 12, 6);
+                sheet.getCell(startRow + 12, 5).value = item.supplier || '';
+                sheet.getCell(startRow + 12, 5).font = font;
+                sheet.getCell(startRow + 12, 5).border = {
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
+                };
+
+                // 备注（合并G13:H13）
+                sheet.mergeCells(startRow + 12, 7, startRow + 12, 8);
+                sheet.getCell(startRow + 12, 7).value = item.remarks || '';
+                sheet.getCell(startRow + 12, 7).font = font;
+                sheet.getCell(startRow + 12, 7).border = {
+                    top: { style: 'thin' }, left: { style: 'thin' },
+                    bottom: { style: 'thin' }, right: { style: 'thin' }
+                };
+
+                // 行14: 加工参数标题
+                sheet.getCell(startRow + 13, 1).value = '加工参数/材料特性备注|Note';
+                sheet.getCell(startRow + 13, 5).value = '联系人|Contact';
+                sheet.getCell(startRow + 13, 1).font = boldFont;
+                sheet.getCell(startRow + 13, 5).font = boldFont;
+                sheet.getCell(startRow + 13, 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                sheet.getCell(startRow + 13, 5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+
+                // 行15: 厚度、防火等级、联系电话
+                sheet.getCell(startRow + 14, 1).value = '厚度：';
+                sheet.getCell(startRow + 14, 2).value = item.thickness || '';
+                sheet.getCell(startRow + 14, 3).value = '防火等级：';
+                sheet.getCell(startRow + 14, 4).value = item.fireRating || '';
+                sheet.getCell(startRow + 14, 5).value = item.phone || '';
+                [1, 2, 3, 4, 5].forEach(col => {
+                    sheet.getCell(startRow + 14, col).font = font;
+                });
+
+                // 行16: 表面效果、参考价格
+                sheet.getCell(startRow + 15, 1).value = '表面效果：';
+                sheet.getCell(startRow + 15, 5).value = '参考价格|Reference';
+                sheet.getCell(startRow + 15, 1).font = font;
+                sheet.getCell(startRow + 15, 5).font = font;
+
+                // 行17: 安装方式、价格
+                sheet.getCell(startRow + 16, 1).value = '安装方式：';
+                sheet.getCell(startRow + 16, 5).value = item.referencePrice ? `${item.referencePrice}/㎡` : '';
+                sheet.getCell(startRow + 16, 1).font = font;
+                sheet.getCell(startRow + 16, 5).font = font;
+
+                // 行18: 加工备注
+                sheet.getCell(startRow + 17, 1).value = '加工备注：';
+                sheet.getCell(startRow + 17, 1).font = font;
+            },
+
+        };
+
+        // 初始化应用
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>

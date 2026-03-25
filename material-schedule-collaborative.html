@@ -294,7 +294,9 @@
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dnl0eHBsaHVsbG9ueGtpZmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTk0MjgsImV4cCI6MjA5MDAzNTQyOH0.5wVZin8TObqhDhrxZG3-31cmkh0erLrOT-tGxBNC1cQ';
 
             const { createClient } = window.supabase;
-            const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+            const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+            window.supabaseClient = supabaseClient;
+            const supabase = supabaseClient;
 
             let currentUser = null;
             let materials = [];
