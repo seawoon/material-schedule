@@ -1380,7 +1380,7 @@
                             technical_requirement: item.technicalRequirement,
                             supplier: item.supplier,
                             contact_person: item.contactPerson,
-                            reference_price: item.referencePrice,
+                            reference_price: item.referencePrice ? parseFloat(item.referencePrice) : null,
                             status: item.status,
                             remarks: item.remarks,
                             project_id: item.projectId || this.projectInfo.id,
