@@ -1198,6 +1198,7 @@
                             .eq('id', this.projectInfo.id);
 
                         if (error) throw error;
+                        console.log('项目信息已保存到数据库');
                     } catch (err) {
                         alert('保存失败: ' + err.message);
                         return;
