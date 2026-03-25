@@ -285,122 +285,128 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://twvytxplhullonxkifba.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dnl0eHBsaHVsbG9ueGtpZmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTk0MjgsImV4cCI6MjA5MDAzNTQyOH0.5wVZin8TObqhDhrxZG3-31cmkh0erLrOT-tGxBNC1cQ';
-        
-        const { createClient } = window.supabase;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        let currentUser = null;
-        let materials = [];
-        let subscription = null;
+        if (window.supabaseInitialized) {
+            console.log('Already initialized');
+        } else {
+            window.supabaseInitialized = true;
 
-        async function init() {
-            document.getElementById('userInfo').textContent = '游客模式';
-            loadMaterials();
-            subscribeToChanges();
-        }
+            const SUPABASE_URL = 'https://twvytxplhullonxkifba.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3dnl0eHBsaHVsbG9ueGtpZmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTk0MjgsImV4cCI6MjA5MDAzNTQyOH0.5wVZin8TObqhDhrxZG3-31cmkh0erLrOT-tGxBNC1cQ';
 
-        async function checkAuth() {
-            // 简化版：跳过认证
-            return true;
-        }
+            const { createClient } = window.supabase;
+            const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function showLoginForm() {
-            const email = prompt('请输入邮箱地址：');
-            if (email) {
-                document.getElementById('loading').textContent = '发送验证码中...';
-                supabase.auth.signInWithOtp({ email }).then(({ error }) => {
-                    if (error) {
-                        alert('发送失败: ' + error.message);
+            let currentUser = null;
+            let materials = [];
+            let subscription = null;
+
+            async function init() {
+                document.getElementById('userInfo').textContent = '游客模式';
+                loadMaterials();
+                subscribeToChanges();
+            }
+
+            async function checkAuth() {
+                // 简化版：跳过认证
+                return true;
+            }
+
+            function showLoginForm() {
+                const email = prompt('请输入邮箱地址：');
+                if (email) {
+                    document.getElementById('loading').textContent = '发送验证码中...';
+                    supabase.auth.signInWithOtp({ email }).then(({ error }) => {
+                        if (error) {
+                            alert('发送失败: ' + error.message);
+                            document.getElementById('loading').textContent = '加载中...';
+                            return;
+                        }
+                        alert('验证码已发送到邮箱，请检查邮件');
+                        const code = prompt('请输入验证码：');
+                        if (code) {
+                            supabase.auth.verifyOtp({ email, token: code, type: 'email' }).then(({ error }) => {
+                                if (error) {
+                                    alert('验证失败: ' + error.message);
+                                    showLoginForm();
+                                    return;
+                                }
+                                init();
+                            });
+                        }
+                    }).catch(err => {
+                        alert('错误: ' + err.message);
                         document.getElementById('loading').textContent = '加载中...';
-                        return;
-                    }
-                    alert('验证码已发送到邮箱，请检查邮件');
-                    const code = prompt('请输入验证码：');
-                    if (code) {
-                        supabase.auth.verifyOtp({ email, token: code, type: 'email' }).then(({ error }) => {
-                            if (error) {
-                                alert('验证失败: ' + error.message);
-                                showLoginForm();
-                                return;
-                            }
-                            init();
-                        });
-                    }
-                }).catch(err => {
-                    alert('错误: ' + err.message);
-                    document.getElementById('loading').textContent = '加载中...';
-                });
-            }
-        }
-
-        async function loadMaterials() {
-            try {
-                const { data, error } = await supabase
-                    .from('materials')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) {
-                    throw error;
+                    });
                 }
-
-                materials = data || [];
-                renderTable();
-            } catch (err) {
-                console.error('加载失败:', err);
-                document.getElementById('loading').innerHTML = `<div class="error">加载失败: ${err.message}</div>`;
             }
-        }
 
-        function subscribeToChanges() {
-            subscription = supabase
-                .channel('materials')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'materials' }, (payload) => {
-                    loadMaterials();
-                })
-                .subscribe();
-        }
+            async function loadMaterials() {
+                try {
+                    const { data, error } = await supabase
+                        .from('materials')
+                        .select('*')
+                        .order('created_at', { ascending: false });
 
-        function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            const table = document.getElementById('materialTable');
-            const loading = document.getElementById('loading');
-            
-            tbody.innerHTML = materials.map((item, idx) => `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td>${item.material_name_cn || '-'}</td>
-                    <td>${item.brand || '-'}</td>
-                    <td>${item.status || '草稿'}</td>
-                    <td>${item.updated_by || '-'}</td>
-                    <td>${new Date(item.updated_at).toLocaleString('zh-CN')}</td>
-                </tr>
-            `).join('');
-            
-            loading.style.display = 'none';
-            table.style.display = 'table';
-        }
+                    if (error) {
+                        throw error;
+                    }
 
-        function toggleTheme() {
-            document.body.classList.toggle('dark');
-            const isDark = document.body.classList.contains('dark');
-            document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        }
+                    materials = data || [];
+                    renderTable();
+                } catch (err) {
+                    console.error('加载失败:', err);
+                    document.getElementById('loading').innerHTML = `<div class="error">加载失败: ${err.message}</div>`;
+                }
+            }
 
-        async function logout() {
-            await supabase.auth.signOut();
-            location.reload();
-        }
+            function subscribeToChanges() {
+                subscription = supabase
+                    .channel('materials')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'materials' }, (payload) => {
+                        loadMaterials();
+                    })
+                    .subscribe();
+            }
 
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark');
-            document.querySelector('.theme-toggle').textContent = '☀️';
-        }
+            function renderTable() {
+                const tbody = document.getElementById('tableBody');
+                const table = document.getElementById('materialTable');
+                const loading = document.getElementById('loading');
 
-        init();
+                tbody.innerHTML = materials.map((item, idx) => `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${item.material_name_cn || '-'}</td>
+                        <td>${item.brand || '-'}</td>
+                        <td>${item.status || '草稿'}</td>
+                        <td>${item.updated_by || '-'}</td>
+                        <td>${new Date(item.updated_at).toLocaleString('zh-CN')}</td>
+                    </tr>
+                `).join('');
+
+                loading.style.display = 'none';
+                table.style.display = 'table';
+            }
+
+            function toggleTheme() {
+                document.body.classList.toggle('dark');
+                const isDark = document.body.classList.contains('dark');
+                document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            }
+
+            async function logout() {
+                await supabase.auth.signOut();
+                location.reload();
+            }
+
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+
+            init();
+        }
     </script>
 </body>
 </html>
