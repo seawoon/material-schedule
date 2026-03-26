@@ -676,6 +676,41 @@
             color: #ccc;
             font-size: 24px;
         }
+
+        /* 手机端响应式样式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #e5e5e5;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .toolbar {
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .toolbar .btn {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .detail-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .detail-panel.active {
+                right: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -717,6 +752,7 @@
         <!-- 主内容区 -->
         <div class="main-content">
             <div class="toolbar">
+                <button class="btn btn-secondary" onclick="window.location.href='index.html'" title="返回首页">← 首页</button>
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
                     <input type="text" id="searchInput" placeholder="搜索材料名称、品牌、型号...">
