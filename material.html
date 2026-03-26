@@ -677,23 +677,51 @@
             font-size: 24px;
         }
 
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            width: 44px;
+            height: 44px;
+            background: #007aff;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
         /* 手机端响应式样式 */
         @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: static;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid #e5e5e5;
+            .menu-toggle {
+                display: flex;
             }
 
-            .sidebar-section {
-                display: none;
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                width: 80%;
+                max-width: 320px;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .sidebar.active {
+                left: 0;
             }
 
             .main-content {
                 margin-left: 0;
                 width: 100%;
+                padding-top: 60px;
             }
 
             .toolbar {
@@ -719,6 +747,7 @@
     </style>
 </head>
 <body>
+    <button class="menu-toggle" onclick="app.toggleSidebar()">☰</button>
     <div class="app-container">
         <!-- 左侧导航 -->
         <div class="sidebar">
@@ -1143,6 +1172,11 @@
                 this.render();
             },
 
+            toggleSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                sidebar.classList.toggle('active');
+            },
+
             loadCategories() {
                 const saved = localStorage.getItem('categories');
                 if (saved) {
@@ -1520,6 +1554,13 @@
                 document.getElementById('searchInput').addEventListener('input', (e) => {
                     this.searchTerm = e.target.value.toLowerCase();
                     this.render();
+                });
+
+                // 点击主内容区域关闭侧边栏（仅手机端）
+                document.querySelector('.main-content').addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        document.querySelector('.sidebar').classList.remove('active');
+                    }
                 });
 
                 document.getElementById('category').addEventListener('change', (e) => {
@@ -2444,9 +2485,11 @@
                 // 插入图片
                 if (item.imageData && item.imageData.startsWith('data:image')) {
                     try {
+                        const base64Data = item.imageData.split(',')[1];
+                        const ext = item.imageData.match(/data:image\/(\w+)/)[1];
                         const imageId = workbook.addImage({
-                            base64: item.imageData,
-                            extension: 'png'
+                            base64: base64Data,
+                            extension: ext
                         });
                         sheet.addImage(imageId, {
                             tl: { col: 0, row: startRow + 8 },
