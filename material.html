@@ -1119,6 +1119,7 @@
                     // 获取 URL 中的项目 ID
                     const urlParams = new URLSearchParams(window.location.search);
                     const projectId = urlParams.get('project');
+                    console.log('🔍 开始加载数据，项目ID:', projectId);
 
                     // 加载项目信息
                     if (projectId) {
@@ -1146,6 +1147,8 @@
 
                     const { data, error } = await query;
                     if (error) throw error;
+
+                    console.log('📦 从数据库加载到', data ? data.length : 0, '条材料');
 
                     if (data && data.length > 0) {
                         this.data = data.map(item => ({
