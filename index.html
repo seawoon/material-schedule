@@ -116,11 +116,12 @@
             backdrop-filter: blur(20px);
             padding: 28px 32px;
             display: grid;
-            grid-template-columns: 80px 1fr 140px 60px;
+            grid-template-columns: 80px 1fr 140px 40px 60px;
             gap: 24px;
             align-items: center;
             cursor: pointer;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         body.light .project-row {
@@ -205,6 +206,74 @@
 
         .project-row:hover .arrow {
             transform: translateX(4px);
+        }
+
+        .menu-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        body.light .menu-btn {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.light .menu-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 32px;
+            top: 70px;
+            background: #2c2c2e;
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 160px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        body.light .dropdown-menu {
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-item {
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        body.light .dropdown-item:hover {
+            background: #f5f5f7;
+        }
+
+        .dropdown-item.danger {
+            color: #ff3b30;
         }
 
         .add-project-btn {
@@ -453,7 +522,11 @@
                 data.forEach(project => {
                     const row = document.createElement('div');
                     row.className = 'project-row';
-                    row.onclick = () => openProject(project.id, project.name);
+                    row.onclick = (e) => {
+                        if (!e.target.closest('.menu-btn') && !e.target.closest('.dropdown-menu')) {
+                            openProject(project.id, project.name);
+                        }
+                    };
 
                     row.innerHTML = `
                         <div class="project-no">${escapeHtml(project.project_no || 'N/A')}</div>
@@ -462,7 +535,12 @@
                             <p>${escapeHtml(project.description || '暂无描述')}</p>
                         </div>
                         <div class="project-date">${escapeHtml(project.start_date || '未设置日期')}</div>
+                        <button class="menu-btn" onclick="event.stopPropagation(); toggleMenu('${project.id}')">⋯</button>
                         <div class="arrow">→</div>
+                        <div class="dropdown-menu" id="menu-${project.id}">
+                            <div class="dropdown-item" onclick="event.stopPropagation(); editProject('${project.id}')">✏️ 编辑项目</div>
+                            <div class="dropdown-item danger" onclick="event.stopPropagation(); deleteProject('${project.id}')">🗑️ 删除项目</div>
+                        </div>
                     `;
 
                     list.appendChild(row);
@@ -558,6 +636,38 @@
             document.querySelector('.theme-toggle').textContent = isLight ? '🌙' : '☀️';
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
         }
+
+        function toggleMenu(projectId) {
+            const menu = document.getElementById(`menu-${projectId}`);
+            const allMenus = document.querySelectorAll('.dropdown-menu');
+            allMenus.forEach(m => {
+                if (m.id !== `menu-${projectId}`) {
+                    m.classList.remove('active');
+                }
+            });
+            menu.classList.toggle('active');
+        }
+
+        async function deleteProject(projectId) {
+            if (!confirm('确定要删除这个项目吗？删除后无法恢复！')) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('projects')
+                    .delete()
+                    .eq('id', projectId);
+
+                if (error) throw error;
+                await loadProjects();
+            } catch (err) {
+                alert('删除失败: ' + err.message);
+            }
+        }
+
+        // 点击页面其他地方关闭菜单
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+        });
 
         if (localStorage.getItem('theme') === 'light') {
             document.body.classList.add('light');
