@@ -567,7 +567,14 @@
         // 页面首次加载
         loadProjects();
 
-        // 当页面重新获得焦点时，重新加载数据
+        // 当页面从往返缓存恢复或重新获得焦点时，重新加载数据
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                console.log('页面从缓存恢复，刷新项目列表');
+                loadProjects();
+            }
+        });
+
         window.addEventListener('focus', () => {
             console.log('页面重新获得焦点，刷新项目列表');
             loadProjects();
