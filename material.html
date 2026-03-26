@@ -681,14 +681,19 @@
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
-                position: relative;
+                position: static;
                 height: auto;
                 border-right: none;
                 border-bottom: 1px solid #e5e5e5;
             }
 
+            .sidebar-section {
+                display: none;
+            }
+
             .main-content {
                 margin-left: 0;
+                width: 100%;
             }
 
             .toolbar {
