@@ -567,19 +567,11 @@
         // 页面首次加载
         loadProjects();
 
-        // 当页面可见性改变时（从其他标签页或页面返回），重新加载数据
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                console.log('页面变为可见，刷新项目列表');
-                loadProjects();
-            }
-        });
-
-        // 当页面从往返缓存恢复时，重新加载数据
+        // 禁用往返缓存，强制每次都重新加载
         window.addEventListener('pageshow', (event) => {
             if (event.persisted) {
-                console.log('页面从缓存恢复，刷新项目列表');
-                loadProjects();
+                console.log('检测到缓存恢复，强制重新加载页面');
+                window.location.reload();
             }
         });
     </script>
