@@ -1427,6 +1427,9 @@
 
                     console.log('✅ 所有数据已保存到 Supabase');
 
+                    // 等待 500ms 确保数据库写入完成
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
                     // 重新加载数据以获取最新的 ID
                     await this.loadData();
                     this.render();
