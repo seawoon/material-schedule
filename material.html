@@ -2405,13 +2405,13 @@
                     let currentRow = 1;
                     for (const item of grouped[category]) {
                         if (currentRow > 1) currentRow++;
-                        await this.createMaterialBlockExcelJS(sheet, item, currentRow);
+                        await this.createMaterialBlockExcelJS(workbook, sheet, item, currentRow);
                         currentRow += 19;
                     }
                 }
             },
 
-            async createMaterialBlockExcelJS(sheet, item, startRow) {
+            async createMaterialBlockExcelJS(workbook, sheet, item, startRow) {
                 const labelFont = { name: '微软雅黑', size: 10 };
                 const dataFont = { name: '微软雅黑', size: 11, bold: true };
                 const normalFont = { name: '微软雅黑', size: 10 };
