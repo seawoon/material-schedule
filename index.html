@@ -657,14 +657,28 @@
             if (!confirm('确定要删除这个项目吗？删除后无法恢复！')) return;
 
             try {
+                // 先删除项目关联的所有材料
+                const { error: materialsError } = await supabaseClient
+                    .from('materials')
+                    .delete()
+                    .eq('project_id', projectId);
+
+                if (materialsError) {
+                    console.error('删除材料失败:', materialsError);
+                }
+
+                // 再删除项目
                 const { error } = await supabaseClient
                     .from('projects')
                     .delete()
                     .eq('id', projectId);
 
                 if (error) throw error;
+
+                console.log('✅ 项目已删除');
                 await loadProjects();
             } catch (err) {
+                console.error('❌ 删除失败:', err);
                 alert('删除失败: ' + err.message);
             }
         }

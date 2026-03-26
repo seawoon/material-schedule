@@ -1172,6 +1172,7 @@
                             referencePrice: item.reference_price,
                             status: item.status || '草稿',
                             remarks: item.remarks,
+                            imageData: item.image_data,
                             createdAt: item.created_at,
                             projectId: item.project_id
                         }));
@@ -1390,6 +1391,7 @@
                             reference_price: item.referencePrice ? parseFloat(item.referencePrice) : null,
                             status: item.status,
                             remarks: item.remarks,
+                            image_data: item.imageData || null,
                             project_id: item.projectId || this.projectInfo.id,
                             updated_at: new Date().toISOString()
                         };
