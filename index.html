@@ -103,7 +103,7 @@
             gap: 1px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 18px;
-            overflow: hidden;
+            overflow: visible;
             margin-bottom: 32px;
         }
 
@@ -116,13 +116,34 @@
             backdrop-filter: blur(20px);
             padding: 28px 32px;
             display: grid;
-            grid-template-columns: 80px 1fr 140px 40px 60px;
+            grid-template-columns: 40px 80px 1fr 140px 40px 60px;
             gap: 24px;
             align-items: center;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
             z-index: 1;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            font-size: 20px;
+            color: #86868b;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .project-row.dragging {
+            opacity: 0.5;
+            background: rgba(0, 122, 255, 0.1) !important;
+        }
+
+        .project-row.drag-over {
+            border-top: 2px solid #007aff;
         }
 
         .project-row:has(.dropdown-menu.active) {
@@ -511,13 +532,17 @@
         }
 
         async function loadProjects() {
+            console.log('🔄 开始加载项目列表...');
             try {
                 const { data, error } = await supabaseClient
                     .from('projects')
                     .select('*')
+                    .order('sort_order', { ascending: true, nullsFirst: false })
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
+
+                console.log('📦 加载到', data.length, '个项目');
 
                 const list = document.getElementById('projectsList');
                 const loading = document.getElementById('loading');
@@ -533,20 +558,81 @@
                         }
                     };
 
+                    const projectId = project.id;
                     row.innerHTML = `
+                        <div class="drag-handle" draggable="true">⋮⋮</div>
                         <div class="project-no">${escapeHtml(project.project_no || 'N/A')}</div>
                         <div class="project-info">
                             <h3>${escapeHtml(project.name)}</h3>
                             <p>${escapeHtml(project.description || '暂无描述')}</p>
                         </div>
                         <div class="project-date">${escapeHtml(project.start_date || '未设置日期')}</div>
-                        <button class="menu-btn" onclick="event.stopPropagation(); toggleMenu('${project.id}')">⋯</button>
+                        <button class="menu-btn" data-project-id="${projectId}">⋯</button>
                         <div class="arrow">→</div>
-                        <div class="dropdown-menu" id="menu-${project.id}">
-                            <div class="dropdown-item" onclick="event.stopPropagation(); editProject('${project.id}')">✏️ 编辑项目</div>
-                            <div class="dropdown-item danger" onclick="event.stopPropagation(); deleteProject('${project.id}')">🗑️ 删除项目</div>
+                        <div class="dropdown-menu" id="menu-${projectId}">
+                            <div class="dropdown-item" data-action="edit" data-project-id="${projectId}">✏️ 编辑项目</div>
+                            <div class="dropdown-item danger" data-action="delete" data-project-id="${projectId}">🗑️ 删除项目</div>
                         </div>
                     `;
+
+                    // 拖拽事件
+                    const dragHandle = row.querySelector('.drag-handle');
+                    row.draggable = true;
+
+                    row.addEventListener('dragstart', (e) => {
+                        if (e.target.closest('.drag-handle')) {
+                            row.classList.add('dragging');
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', projectId);
+                        } else {
+                            e.preventDefault();
+                        }
+                    });
+
+                    row.addEventListener('dragend', () => {
+                        row.classList.remove('dragging');
+                        document.querySelectorAll('.project-row').forEach(r => r.classList.remove('drag-over'));
+                    });
+
+                    row.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        const dragging = document.querySelector('.dragging');
+                        if (dragging && dragging !== row) {
+                            row.classList.add('drag-over');
+                        }
+                    });
+
+                    row.addEventListener('dragleave', () => {
+                        row.classList.remove('drag-over');
+                    });
+
+                    row.addEventListener('drop', async (e) => {
+                        e.preventDefault();
+                        row.classList.remove('drag-over');
+                        const draggedId = e.dataTransfer.getData('text/plain');
+                        if (draggedId && draggedId !== projectId) {
+                            await swapProjects(draggedId, projectId);
+                        }
+                    });
+
+                    // 绑定事件
+                    row.querySelector('.menu-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleMenu(projectId);
+                    });
+
+                    row.querySelectorAll('.dropdown-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            closeAllMenus();
+                            const action = item.dataset.action;
+                            if (action === 'edit') {
+                                editProject(projectId);
+                            } else if (action === 'delete') {
+                                deleteProject(projectId);
+                            }
+                        });
+                    });
 
                     list.appendChild(row);
                 });
@@ -554,6 +640,8 @@
                 loading.style.display = 'none';
                 list.style.display = 'flex';
                 addBtn.style.display = 'block';
+
+                console.log('✅ 项目列表渲染完成');
             } catch (err) {
                 console.error('加载失败:', err);
                 document.getElementById('loading').textContent = '加载失败: ' + err.message;
@@ -653,7 +741,12 @@
             menu.classList.toggle('active');
         }
 
+        function closeAllMenus() {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('active'));
+        }
+
         async function deleteProject(projectId) {
+            console.log('删除项目 ID:', projectId, '类型:', typeof projectId);
             if (!confirm('确定要删除这个项目吗？删除后无法恢复！')) return;
 
             try {
@@ -675,11 +768,39 @@
 
                 if (error) throw error;
 
-                console.log('✅ 项目已删除');
-                await loadProjects();
+                console.log('✅ 项目已删除，准备刷新列表');
+                window.location.reload();
             } catch (err) {
                 console.error('❌ 删除失败:', err);
                 alert('删除失败: ' + err.message);
+            }
+        }
+
+        async function swapProjects(id1, id2) {
+            try {
+                const { data: projects } = await supabaseClient
+                    .from('projects')
+                    .select('id, sort_order')
+                    .in('id', [id1, id2]);
+
+                if (!projects || projects.length !== 2) return;
+
+                const p1 = projects.find(p => p.id === id1);
+                const p2 = projects.find(p => p.id === id2);
+
+                await supabaseClient
+                    .from('projects')
+                    .update({ sort_order: p2.sort_order || 0 })
+                    .eq('id', id1);
+
+                await supabaseClient
+                    .from('projects')
+                    .update({ sort_order: p1.sort_order || 0 })
+                    .eq('id', id2);
+
+                await loadProjects();
+            } catch (err) {
+                console.error('交换失败:', err);
             }
         }
 
