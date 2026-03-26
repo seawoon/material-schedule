@@ -1178,6 +1178,10 @@
                     } else {
                         this.data = [];
                     }
+
+                    console.log('✅ 数据加载完成，开始渲染页面');
+                    this.render();
+
                 } catch (err) {
                     console.error('加载失败:', err);
                     this.data = [];
