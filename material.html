@@ -2643,8 +2643,8 @@
                         let width = img.width;
                         let height = img.height;
 
-                        // 如果是竖图，旋转90度（交换宽高）
-                        if (height > width) {
+                        // 只有明显的竖图才旋转（高度比宽度大20%以上）
+                        if (height > width * 1.2) {
                             [width, height] = [height, width];
                         }
 
