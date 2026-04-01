@@ -2632,13 +2632,35 @@
                     try {
                         const base64Data = item.imageData.split(',')[1];
                         const ext = item.imageData.match(/data:image\/(\w+)/)[1];
+
+                        // 获取图片尺寸
+                        const img = new Image();
+                        await new Promise((resolve) => {
+                            img.onload = resolve;
+                            img.src = item.imageData;
+                        });
+
+                        let width = img.width;
+                        let height = img.height;
+
+                        // 如果是竖图，旋转90度（交换宽高）
+                        if (height > width) {
+                            [width, height] = [height, width];
+                        }
+
+                        // 按比例缩放到容器（500x293）
+                        const maxWidth = 500;
+                        const maxHeight = 293;
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+
                         const imageId = workbook.addImage({
                             base64: base64Data,
                             extension: ext
                         });
+
                         sheet.addImage(imageId, {
                             tl: { col: 0, row: startRow + 8 },
-                            ext: { width: 500, height: 293 }
+                            ext: { width: width * ratio, height: height * ratio }
                         });
                     } catch (e) {
                         console.error('图片插入失败:', e);
