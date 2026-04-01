@@ -212,6 +212,46 @@
             box-shadow: none;
         }
 
+        .dropdown-wrapper {
+            position: relative;
+        }
+
+        .tool-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 140px;
+            z-index: 1000;
+        }
+
+        .tool-dropdown.show {
+            display: block;
+        }
+
+        .tool-dropdown-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .tool-dropdown-item:hover {
+            background: #f5f5f5;
+        }
+
+        .tool-dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tool-dropdown-item:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
         .search-box {
             flex: 1;
             max-width: 400px;
@@ -827,21 +867,31 @@
         <div class="main-content">
             <div class="toolbar">
                 <button class="btn btn-secondary" onclick="window.location.href='index.html'" title="返回首页">← 首页</button>
-                <button class="btn btn-secondary" onclick="app.openGoogleDrive()" title="打开项目网盘">📁 项目网盘</button>
+                <button class="btn btn-secondary" onclick="app.openGoogleDrive()" title="打开项目网盘">📁 网盘</button>
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
                     <input type="text" id="searchInput" placeholder="搜索材料名称、品牌、型号...">
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
-                <button class="btn btn-primary" onclick="app.addNew()">+ 新增材料</button>
-                <button class="btn btn-secondary" onclick="app.batchEdit()">批量编辑</button>
-                <button class="btn btn-secondary" onclick="app.compareMaterials()">对比材料</button>
-                <button class="btn btn-secondary" onclick="app.duplicateSelected()">复制</button>
-                <button class="btn btn-danger" onclick="app.deleteSelected()">删除</button>
-                <button class="btn btn-secondary" onclick="app.showCostStats()">成本统计</button>
-                <button class="btn btn-secondary" onclick="app.exportExcel()">导出 Excel</button>
-                <button class="btn btn-secondary" onclick="app.exportJSON()">导出 JSON</button>
-                <button class="btn btn-secondary" onclick="document.getElementById('importJSON').click()">导入 JSON</button>
+                <button class="btn btn-primary" onclick="app.addNew()">+ 新增</button>
+                <div class="dropdown-wrapper">
+                    <button class="btn btn-secondary" onclick="app.toggleToolMenu(event)">⚙️ 操作 ▾</button>
+                    <div class="tool-dropdown" id="toolMenu">
+                        <div class="tool-dropdown-item" onclick="app.batchEdit()">批量编辑</div>
+                        <div class="tool-dropdown-item" onclick="app.compareMaterials()">对比材料</div>
+                        <div class="tool-dropdown-item" onclick="app.duplicateSelected()">复制选中</div>
+                        <div class="tool-dropdown-item" onclick="app.deleteSelected()">删除选中</div>
+                        <div class="tool-dropdown-item" onclick="app.showCostStats()">成本统计</div>
+                    </div>
+                </div>
+                <div class="dropdown-wrapper">
+                    <button class="btn btn-secondary" onclick="app.toggleExportMenu(event)">📤 导出 ▾</button>
+                    <div class="tool-dropdown" id="exportMenu">
+                        <div class="tool-dropdown-item" onclick="app.exportExcel()">导出 Excel</div>
+                        <div class="tool-dropdown-item" onclick="app.exportJSON()">导出 JSON</div>
+                        <div class="tool-dropdown-item" onclick="document.getElementById('importJSON').click()">导入 JSON</div>
+                    </div>
+                </div>
                 <input type="file" id="importJSON" accept=".json" style="display:none" onchange="app.importJSON(event)">
             </div>
 
@@ -2313,6 +2363,22 @@
                 }
             },
 
+            toggleToolMenu(e) {
+                e.stopPropagation();
+                const menu = document.getElementById('toolMenu');
+                const exportMenu = document.getElementById('exportMenu');
+                exportMenu.classList.remove('show');
+                menu.classList.toggle('show');
+            },
+
+            toggleExportMenu(e) {
+                e.stopPropagation();
+                const menu = document.getElementById('exportMenu');
+                const toolMenu = document.getElementById('toolMenu');
+                toolMenu.classList.remove('show');
+                menu.classList.toggle('show');
+            },
+
             exportJSON() {
                 const dataStr = JSON.stringify(this.data, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
@@ -2664,6 +2730,10 @@
                 sheet.getCell(startRow + 17, 1).font = normalFont;
             }
         };
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.tool-dropdown').forEach(menu => menu.classList.remove('show'));
+        });
 
         document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
