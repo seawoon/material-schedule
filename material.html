@@ -827,6 +827,7 @@
         <div class="main-content">
             <div class="toolbar">
                 <button class="btn btn-secondary" onclick="window.location.href='index.html'" title="返回首页">← 首页</button>
+                <button class="btn btn-secondary" onclick="app.openGoogleDrive()" title="打开项目网盘">📁 项目网盘</button>
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
                     <input type="text" id="searchInput" placeholder="搜索材料名称、品牌、型号...">
@@ -1033,6 +1034,10 @@
                 <div class="form-group">
                     <label>项目日期</label>
                     <input type="date" id="projectDateInput">
+                </div>
+                <div class="form-group">
+                    <label>Google Drive 链接</label>
+                    <input type="url" id="projectDriveUrlInput" placeholder="https://drive.google.com/...">
                 </div>
             </div>
             <div class="modal-footer">
@@ -1257,7 +1262,8 @@
                                 id: projectData.id,
                                 name: projectData.name,
                                 no: projectData.project_no || '',
-                                date: projectData.start_date || ''
+                                date: projectData.start_date || '',
+                                driveUrl: projectData.drive_url || ''
                             };
                             this.updateProjectDisplay();
                         }
@@ -1324,10 +1330,12 @@
                 const name = document.getElementById('projectNameInput').value || '未命名项目';
                 const no = document.getElementById('projectNoInput').value;
                 const date = document.getElementById('projectDateInput').value;
+                const driveUrl = document.getElementById('projectDriveUrlInput').value;
 
                 this.projectInfo.name = name;
                 this.projectInfo.no = no;
                 this.projectInfo.date = date;
+                this.projectInfo.driveUrl = driveUrl;
 
                 // 保存到 Supabase
                 if (this.projectInfo.id) {
@@ -1338,6 +1346,7 @@
                                 name: name,
                                 project_no: no,
                                 start_date: date,
+                                drive_url: driveUrl,
                                 updated_at: new Date().toISOString()
                             })
                             .eq('id', this.projectInfo.id);
@@ -1364,6 +1373,7 @@
                 document.getElementById('projectNameInput').value = this.projectInfo.name;
                 document.getElementById('projectNoInput').value = this.projectInfo.no;
                 document.getElementById('projectDateInput').value = this.projectInfo.date;
+                document.getElementById('projectDriveUrlInput').value = this.projectInfo.driveUrl || '';
                 document.getElementById('projectModal').classList.add('show');
             },
 
@@ -2291,6 +2301,16 @@
 
             closeImageModal() {
                 document.getElementById('imageModal').classList.remove('show');
+            },
+
+            openGoogleDrive() {
+                const driveUrl = this.projectInfo.driveUrl;
+                if (driveUrl) {
+                    window.open(driveUrl, '_blank');
+                } else {
+                    alert('请先在项目信息中设置 Google Drive 链接');
+                    this.editProjectInfo();
+                }
             },
 
             exportJSON() {
