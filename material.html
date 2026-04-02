@@ -1268,11 +1268,10 @@
                 'OS': ['按材料特性确定技术要求']
             },
 
-            init() {
-                this.loadData();
-                this.loadProjectInfo();
+            async init() {
                 this.loadCategories();
                 this.bindEvents();
+                await this.loadData();
                 this.updateDatalistOptions();
                 this.render();
             },
@@ -1294,39 +1293,58 @@
                 localStorage.setItem('categories', JSON.stringify(this.categories));
             },
 
+            getCurrentProjectId() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('project');
+            },
+
+            ensureProjectSelected(actionLabel = '执行此操作') {
+                if (this.projectInfo.id || this.getCurrentProjectId()) {
+                    return true;
+                }
+
+                alert(`请先从首页选择一个项目，再${actionLabel}`);
+                return false;
+            },
+
             async loadData() {
                 try {
                     // 获取 URL 中的项目 ID
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const projectId = urlParams.get('project');
+                    const projectId = this.getCurrentProjectId();
                     console.log('🔍 开始加载数据，项目ID:', projectId);
 
+                    if (!projectId) {
+                        this.projectInfo = { id: null, name: '未选择项目', no: '', date: '', driveUrl: '' };
+                        this.data = [];
+                        this.updateProjectDisplay();
+                        this.render();
+                        return;
+                    }
+
                     // 加载项目信息
-                    if (projectId) {
-                        const { data: projectData, error: projectError } = await supabaseClient
-                            .from('projects')
-                            .select('*')
-                            .eq('id', projectId)
-                            .single();
+                    const { data: projectData, error: projectError } = await supabaseClient
+                        .from('projects')
+                        .select('*')
+                        .eq('id', projectId)
+                        .single();
 
-                        if (!projectError && projectData) {
-                            this.projectInfo = {
-                                id: projectData.id,
-                                name: projectData.name,
-                                no: projectData.project_no || '',
-                                date: projectData.start_date || '',
-                                driveUrl: projectData.drive_url || ''
-                            };
-                            this.updateProjectDisplay();
-                        }
+                    if (projectError) throw projectError;
+
+                    if (projectData) {
+                        this.projectInfo = {
+                            id: projectData.id,
+                            name: projectData.name,
+                            no: projectData.project_no || '',
+                            date: projectData.start_date || '',
+                            driveUrl: projectData.drive_url || ''
+                        };
+                        this.updateProjectDisplay();
                     }
 
-                    let query = supabaseClient.from('materials').select('*');
-                    if (projectId) {
-                        query = query.eq('project_id', projectId);
-                    }
-
-                    const { data, error } = await query;
+                    const { data, error } = await supabaseClient
+                        .from('materials')
+                        .select('*')
+                        .eq('project_id', projectId);
                     if (error) throw error;
 
                     console.log('📦 从数据库加载到', data ? data.length : 0, '条材料');
@@ -1367,15 +1385,8 @@
                 } catch (err) {
                     console.error('加载失败:', err);
                     this.data = [];
+                    this.render();
                 }
-            },
-
-            loadProjectInfo() {
-                const saved = localStorage.getItem('projectInfo');
-                if (saved) {
-                    this.projectInfo = JSON.parse(saved);
-                }
-                this.updateProjectDisplay();
             },
 
             async saveProjectInfo() {
@@ -1549,6 +1560,8 @@
             async saveData() {
                 // 同步到 Supabase
                 try {
+                    if (!this.ensureProjectSelected('保存材料')) return;
+
                     console.log('开始保存数据，共 ' + this.data.length + ' 条');
 
                     // 分离新增和更新的数据
@@ -1997,6 +2010,8 @@
                     return;
                 }
 
+                if (!this.ensureProjectSelected('新增或编辑材料')) return;
+
                 const id = document.getElementById('editId').value;
                 const category = document.getElementById('category').value;
                 const itemNoInput = document.getElementById('itemNo').value.trim();
@@ -2161,7 +2176,7 @@
                         console.log('✅ 已从数据库删除:', uuidsToDelete.length, '条');
                     }
 
-                    this.data = this.data.filter(item => !this.selectedIds.has(item.id));
+                    this.data = this.data.filter(item => !this.selectedIds.has(String(item.id)));
                     this.selectedIds.clear();
                     this.render();
                 } catch (err) {
@@ -2763,5 +2778,3 @@
     </script>
 </body>
 </html>
-
-
