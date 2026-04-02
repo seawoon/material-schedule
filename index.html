@@ -776,31 +776,39 @@
             }
         }
 
-        async function swapProjects(id1, id2) {
+        async function swapProjects(draggedId, targetId) {
             try {
-                const { data: projects } = await supabaseClient
+                // 获取所有项目
+                const { data: allProjects } = await supabaseClient
                     .from('projects')
                     .select('id, sort_order')
-                    .in('id', [id1, id2]);
+                    .order('sort_order', { ascending: true, nullsFirst: false })
+                    .order('created_at', { ascending: false });
 
-                if (!projects || projects.length !== 2) return;
+                if (!allProjects) return;
 
-                const p1 = projects.find(p => p.id === id1);
-                const p2 = projects.find(p => p.id === id2);
+                // 找到拖拽项和目标项的索引
+                const draggedIndex = allProjects.findIndex(p => p.id === draggedId);
+                const targetIndex = allProjects.findIndex(p => p.id === targetId);
 
-                await supabaseClient
-                    .from('projects')
-                    .update({ sort_order: p2.sort_order || 0 })
-                    .eq('id', id1);
+                if (draggedIndex === -1 || targetIndex === -1) return;
 
-                await supabaseClient
-                    .from('projects')
-                    .update({ sort_order: p1.sort_order || 0 })
-                    .eq('id', id2);
+                // 重新排列数组
+                const [draggedItem] = allProjects.splice(draggedIndex, 1);
+                allProjects.splice(targetIndex, 0, draggedItem);
 
+                // 更新所有项目的 sort_order
+                const updates = allProjects.map((project, index) =>
+                    supabaseClient
+                        .from('projects')
+                        .update({ sort_order: index })
+                        .eq('id', project.id)
+                );
+
+                await Promise.all(updates);
                 await loadProjects();
             } catch (err) {
-                console.error('交换失败:', err);
+                console.error('排序失败:', err);
             }
         }
 
