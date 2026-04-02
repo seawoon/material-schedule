@@ -1312,24 +1312,15 @@
 
             renderAreaCheckboxes() {
                 const container = document.getElementById('areaUsageContainer');
+                if (!container) return;
+
                 const sorted = [...this.availableAreas].sort();
 
-                // 统计每个区域的使用次数
-                const usageCount = {};
-                this.data.forEach(item => {
-                    if (item.areaUsage) {
-                        item.areaUsage.split(',').forEach(area => {
-                            const trimmed = area.trim();
-                            usageCount[trimmed] = (usageCount[trimmed] || 0) + 1;
-                        });
-                    }
-                });
-
+                // 简化版本：不显示使用次数，提升性能
                 container.innerHTML = sorted.map(area => `
                     <label class="area-checkbox">
                         <input type="checkbox" value="${area}" ${this.currentSelectedAreas.includes(area) ? 'checked' : ''}>
                         <span>${area}</span>
-                        <span style="color: #999; font-size: 11px; margin-left: 8px;">(${usageCount[area] || 0})</span>
                         <button type="button" onclick="app.copyAreaName('${area}')" style="margin-left: auto; padding: 2px 8px; font-size: 11px; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer;" title="复制">📋</button>
                     </label>
                 `).join('');
