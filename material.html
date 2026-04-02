@@ -826,6 +826,23 @@
         .image-modal-close:hover {
             background: rgba(0, 0, 0, 0.8);
         }
+
+        .area-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .area-checkbox:hover {
+            background: #f5f5f5;
+        }
+
+        .area-checkbox input {
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -910,9 +927,7 @@
                             <th>材料名称</th>
                             <th>品牌</th>
                             <th>型号</th>
-                            <th>空间</th>
                             <th>使用区域</th>
-                            <th>楼层</th>
                             <th>状态</th>
                         </tr>
                     </thead>
@@ -992,29 +1007,14 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>楼层</label>
-                        <input type="text" id="floor" list="floorList">
-                        <datalist id="floorList"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label>空间</label>
-                        <input type="text" id="space" list="spaceList">
-                        <datalist id="spaceList"></datalist>
-                    </div>
-                    <div class="form-group">
                         <label>使用区域</label>
-                        <input type="text" id="areaUsage">
-                    </div>
-                    <div class="form-group">
-                        <label>部位</label>
-                        <select id="position">
-                            <option value="">请选择</option>
-                            <option value="地面">地面</option>
-                            <option value="墙面">墙面</option>
-                            <option value="天花">天花</option>
-                            <option value="柜体">柜体</option>
-                            <option value="台面">台面</option>
-                        </select>
+                        <div id="areaUsageContainer" style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; max-height: 200px; overflow-y: auto;">
+                            <!-- 多选区域列表 -->
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <input type="text" id="newAreaInput" placeholder="输入新区域名称" style="flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="app.addNewArea()" style="padding: 8px 16px;">添加</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>安装方式</label>
@@ -1231,6 +1231,8 @@
             currentFilter: { type: 'view', value: 'all' },
             searchTerm: '',
             projectInfo: { id: null, name: '未命名项目', no: '', date: '' },
+            availableAreas: [],
+            currentSelectedAreas: [],
 
             categories: {
                 'ST': '石材',
@@ -1270,6 +1272,7 @@
 
             async init() {
                 this.loadCategories();
+                this.loadAreas();
                 this.bindEvents();
                 await this.loadData();
                 this.updateDatalistOptions();
@@ -1291,6 +1294,44 @@
 
             saveCategories() {
                 localStorage.setItem('categories', JSON.stringify(this.categories));
+            },
+
+            loadAreas() {
+                const saved = localStorage.getItem('availableAreas');
+                if (saved) {
+                    this.availableAreas = JSON.parse(saved);
+                }
+            },
+
+            saveAreas() {
+                localStorage.setItem('availableAreas', JSON.stringify(this.availableAreas));
+            },
+
+            renderAreaCheckboxes() {
+                const container = document.getElementById('areaUsageContainer');
+                const sorted = [...this.availableAreas].sort();
+                container.innerHTML = sorted.map(area => `
+                    <label class="area-checkbox">
+                        <input type="checkbox" value="${area}" ${this.currentSelectedAreas.includes(area) ? 'checked' : ''}>
+                        <span>${area}</span>
+                    </label>
+                `).join('');
+            },
+
+            addNewArea() {
+                const input = document.getElementById('newAreaInput');
+                const area = input.value.trim();
+                if (area && !this.availableAreas.includes(area)) {
+                    this.availableAreas.push(area);
+                    this.saveAreas();
+                    this.renderAreaCheckboxes();
+                    input.value = '';
+                }
+            },
+
+            getSelectedAreas() {
+                const checkboxes = document.querySelectorAll('#areaUsageContainer input:checked');
+                return Array.from(checkboxes).map(cb => cb.value);
             },
 
             getCurrentProjectId() {
@@ -1879,9 +1920,7 @@
                         <td>${item.materialNameCn || '-'}</td>
                         <td>${item.brand || '-'}</td>
                         <td>${item.modelNo || '-'}</td>
-                        <td>${item.space || '-'}</td>
                         <td>${item.areaUsage || '-'}</td>
-                        <td>${item.floor || '-'}</td>
                         <td>${this.getStatusBadge(item.status)}</td>
                     </tr>
                 `).join('');
@@ -1944,6 +1983,9 @@
                 this.updateInstallationOptions(category);
                 this.updateTechnicalOptions(category);
 
+                this.currentSelectedAreas = [];
+                this.renderAreaCheckboxes();
+
                 document.getElementById('category').focus();
             },
 
@@ -1961,12 +2003,15 @@
                 this.updateTechnicalOptions(item.category);
 
                 ['itemNo', 'category', 'materialNameCn', 'materialNameEn', 'brand',
-                    'modelNo', 'specification', 'color', 'floor', 'space', 'areaUsage', 'position',
+                    'modelNo', 'specification', 'color',
                     'installationMethod', 'technicalRequirement', 'supplier', 'contactPerson',
                     'referencePrice', 'remarks'].forEach(field => {
                     const el = document.getElementById(field);
                     if (el) el.value = item[field] || '';
                 });
+
+                this.currentSelectedAreas = item.areaUsage ? item.areaUsage.split(',').map(a => a.trim()) : [];
+                this.renderAreaCheckboxes();
 
                 this.setStatus(item.status || '已确认');
 
@@ -2024,10 +2069,7 @@
                     modelNo: document.getElementById('modelNo').value,
                     specification: document.getElementById('specification').value,
                     color: document.getElementById('color').value,
-                    floor: document.getElementById('floor').value,
-                    space: document.getElementById('space').value,
-                    areaUsage: document.getElementById('areaUsage').value,
-                    position: document.getElementById('position').value,
+                    areaUsage: this.getSelectedAreas().join(', '),
                     installationMethod: document.getElementById('installationMethod').value,
                     technicalRequirement: document.getElementById('technicalRequirement').value,
                     supplier: document.getElementById('supplier').value,
