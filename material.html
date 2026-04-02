@@ -834,7 +834,6 @@
             margin-bottom: 4px;
             border-radius: 4px;
             cursor: pointer;
-            gap: 8px;
         }
 
         .area-checkbox:hover {
@@ -842,8 +841,16 @@
         }
 
         .area-checkbox input[type="checkbox"] {
-            margin: 0;
+            margin: 0 8px 0 0;
             flex-shrink: 0;
+        }
+
+        .area-checkbox > span {
+            flex: 1;
+        }
+
+        .area-checkbox button {
+            margin-left: 8px;
         }
     </style>
 </head>
