@@ -1735,6 +1735,51 @@
                 }
             },
 
+            async saveSingleItem(item) {
+                try {
+                    const payload = {
+                        item_no: item.itemNo,
+                        category: item.category,
+                        material_name_cn: item.materialNameCn,
+                        material_name_en: item.materialNameEn,
+                        brand: item.brand,
+                        model_no: item.modelNo,
+                        specification: item.specification,
+                        color: item.color,
+                        area_usage: item.areaUsage,
+                        installation_method: item.installationMethod,
+                        technical_requirement: item.technicalRequirement,
+                        supplier: item.supplier,
+                        contact_person: item.contactPerson,
+                        reference_price: item.referencePrice ? parseFloat(item.referencePrice) : null,
+                        status: item.status,
+                        remarks: item.remarks,
+                        image_data: item.imageData || null,
+                        project_id: item.projectId || this.projectInfo.id,
+                        updated_at: new Date().toISOString()
+                    };
+
+                    if (typeof item.id === 'number') {
+                        const { data, error } = await supabaseClient
+                            .from('materials')
+                            .insert(payload)
+                            .select()
+                            .single();
+                        if (error) throw error;
+                        item.id = data.id;
+                    } else {
+                        const { error } = await supabaseClient
+                            .from('materials')
+                            .update(payload)
+                            .eq('id', item.id);
+                        if (error) throw error;
+                    }
+                } catch (err) {
+                    console.error('保存单条失败:', err);
+                    throw err;
+                }
+            },
+
             getSampleData() {
                 const baseTime = Date.now();
                 return [
@@ -2149,7 +2194,13 @@
                     this.data.push(newItem);
                 }
 
-                this.saveData();
+                if (id) {
+                    const item = this.data.find(i => i.id == id);
+                    await this.saveSingleItem(item);
+                } else {
+                    const newItem = this.data[this.data.length - 1];
+                    await this.saveSingleItem(newItem);
+                }
                 this.updateDatalistOptions();
                 this.render();
                 this.closeDetail();
