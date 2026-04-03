@@ -2140,7 +2140,7 @@
                 document.getElementById('imageInput').value = '';
             },
 
-            saveDetail() {
+            async saveDetail() {
                 const form = document.getElementById('detailForm');
                 if (!form.checkValidity()) {
                     form.reportValidity();
