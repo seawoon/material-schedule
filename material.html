@@ -1759,7 +1759,13 @@
                         updated_at: new Date().toISOString()
                     };
 
-                    if (typeof item.id === 'number') {
+                    if (typeof item.id === 'string') {
+                        const { error } = await supabaseClient
+                            .from('materials')
+                            .update(payload)
+                            .eq('id', item.id);
+                        if (error) throw error;
+                    } else {
                         const { data, error } = await supabaseClient
                             .from('materials')
                             .insert(payload)
@@ -1767,12 +1773,6 @@
                             .single();
                         if (error) throw error;
                         item.id = data.id;
-                    } else {
-                        const { error } = await supabaseClient
-                            .from('materials')
-                            .update(payload)
-                            .eq('id', item.id);
-                        if (error) throw error;
                     }
                 } catch (err) {
                     console.error('保存单条失败:', err);
